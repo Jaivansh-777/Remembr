@@ -3,7 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 
 import { requireAdmin } from "@/lib/api/admin";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { PLANS } from "@/lib/validations/payment";
+import { applyUpgradeFromPayment } from "@/lib/trial-protection/server";
 import { toPaymentDoc } from "@/lib/payments";
 
 export const runtime = "nodejs";
@@ -63,28 +63,19 @@ export async function POST(request: Request, context: RouteContext) {
     };
     await ref.update(updates);
 
+    let upgrade: Awaited<ReturnType<typeof applyUpgradeFromPayment>> | null =
+      null;
     if (action === "verify") {
-      const userRef = db.collection("users").doc(data.userId as string);
-      await userRef.set(
-        {
-          tier: data.plan === "pro" ? "pro" : "starter",
-          paymentVerifiedAt: FieldValue.serverTimestamp(),
-          billing: {
-            fullName: data.fullName ?? null,
-            address: data.address ?? null,
-            pincode: data.pincode ?? null,
-            mobileNumber: data.mobileNumber ?? null,
-            plan: data.plan ?? "starter",
-            amount: data.amount ?? PLANS.starter.priceMonthly,
-          },
-        },
-        { merge: true }
-      );
+      upgrade = await applyUpgradeFromPayment(db, paymentId);
+      if (!upgrade.ok) {
+        console.error("[api/payments/verify] upgrade failed:", upgrade.error);
+      }
     }
 
     const updated = await ref.get();
     return NextResponse.json({
       payment: toPaymentDoc(updated.id, (updated.data() ?? {}) as Record<string, unknown>),
+      upgrade,
     });
   } catch (error) {
     console.error("[api/payments/verify] failed:", error);

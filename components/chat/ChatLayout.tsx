@@ -9,6 +9,7 @@ import { ChatView } from "@/components/chat/ChatView";
 import { Sidebar } from "@/components/chat/Sidebar";
 import { CreateProject } from "@/components/projects/CreateProject";
 import { InviteMembers } from "@/components/projects/InviteMembers";
+import { UpgradePrompt } from "@/components/upgrade/UpgradePrompt";
 import { streamChat } from "@/lib/api";
 import type { Attachment, ChatDoc, ChatMessage, MemoryMode } from "@/lib/chat";
 import {
@@ -61,6 +62,7 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
   const [project, setProject] = useState<ProjectDoc | null>(null);
   const [creatingProject, setCreatingProject] = useState(false);
   const [invitingMembers, setInvitingMembers] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   const activeChatIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -205,11 +207,14 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
               full += String(evt.data.text ?? "");
               setStreaming(full);
             } else if (evt.event === "memory") {
+              if (Boolean(evt.data.limitReached)) {
+                setShowUpgradePrompt(true);
+              }
               const stored = Boolean(evt.data.stored);
               const mems = evt.data.memories;
               if (Array.isArray(mems) && mems.length > 0 && !stored) {
                 try {
-                  await addMemories(
+                  const result = await addMemories(
                     user.uid,
                     mems.map((m) => ({
                       content: m.content,
@@ -223,6 +228,9 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
                       userName: user.displayName ?? "Team member",
                     }
                   );
+                  if (result.limitReached) {
+                    setShowUpgradePrompt(true);
+                  }
                 } catch (error) {
                   console.error("[chat-layout] store memories failed:", error);
                 }
@@ -461,6 +469,11 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
           onClose={() => setInvitingMembers(false)}
         />
       ) : null}
+
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+      />
     </div>
   );
 }

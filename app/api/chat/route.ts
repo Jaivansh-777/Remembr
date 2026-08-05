@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai/memory";
 import { hasConfiguredProvider, streamWithFallback } from "@/lib/ai/router";
 import { vectorStore } from "@/lib/vector";
+import { getMemoryLimitInfo } from "@/lib/trial-protection/server";
 import { createId, type Attachment } from "@/lib/chat";
 
 export const runtime = "nodejs";
@@ -159,8 +160,15 @@ export async function POST(request: NextRequest) {
 
         await incrementServerQuota(user.uid);
 
+        const db = getAdminDb();
+        let memoryLimitReached = false;
+        if (db) {
+          const info = await getMemoryLimitInfo(db, user.uid);
+          memoryLimitReached = info.exceeded;
+        }
+
         let extracted: ExtractedMemory[] = [];
-        if (shouldStoreMemories(message)) {
+        if (!memoryLimitReached && shouldStoreMemories(message)) {
           try {
             extracted = await extractMemories(
               `User: ${message}\n\nAssistant: ${fullResponse}`
@@ -173,7 +181,7 @@ export async function POST(request: NextRequest) {
         let stored = false;
         if (extracted.length > 0 && getAdminDb()) {
           try {
-            await Promise.all(
+            const results = await Promise.all(
               extracted.map((memory) =>
                 vectorStore.add({
                   id: createId(),
@@ -187,14 +195,14 @@ export async function POST(request: NextRequest) {
                 })
               )
             );
-            stored = true;
+            stored = results.some(Boolean);
           } catch (error) {
             console.error("[chat] vector store write failed:", error);
           }
         }
 
-        if (extracted.length > 0) {
-          send("memory", { memories: extracted, stored });
+        if (extracted.length > 0 || memoryLimitReached) {
+          send("memory", { memories: extracted, stored, limitReached: memoryLimitReached });
         }
         send("done", { provider: currentProvider });
       } catch (error) {

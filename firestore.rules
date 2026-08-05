@@ -67,5 +67,22 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if false;
     }
+
+    // Free-trial abuse protection: written only by the server
+    // (/api/auth/check-trial, /api/upgrade/verify). Users may read their own
+    // device record; IP tracker is server-only.
+    match /deviceFingerprints/{fingerprint} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /ipTracker/{ipId} {
+      allow read, write: if false;
+    }
+
+    match /upgrades/{upgradeId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
   }
 }

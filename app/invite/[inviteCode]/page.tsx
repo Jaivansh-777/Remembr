@@ -89,7 +89,7 @@ export default function InvitePage() {
             </h1>
             <p className="text-sm text-[#A1A1A1]">{error}</p>
             <div className="mt-2 flex flex-col gap-2">
-              {!user ? <GoogleSignIn label="Sign in to join" /> : null}
+              {!user ? <GoogleSignIn label="Sign in to join" skipTrialCheck /> : null}
               <Link
                 href="/chat"
                 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
@@ -106,7 +106,7 @@ export default function InvitePage() {
             <p className="text-sm text-[#A1A1A1]">
               Sign in to join your team and share memory context together.
             </p>
-            <GoogleSignIn label="Sign in to join" />
+            <GoogleSignIn label="Sign in to join" skipTrialCheck />
           </>
         ) : (
           <>

@@ -2,6 +2,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { getAdminDb } from "@/lib/firebase/admin";
 import {
+  countFreeMemories,
+  FREE_TRIAL_MEMORIES,
+  getUserTier,
+} from "@/lib/trial-protection/server";
+import {
   FieldValue as AdminFieldValue,
   Timestamp,
 } from "firebase-admin/firestore";
@@ -92,10 +97,23 @@ export interface VectorQueryResult {
 export class MemoryVectorStore {
   private memory: Map<string, StoredMemoryVector> = new Map();
 
-  async add(memory: Omit<StoredMemoryVector, "embedding">): Promise<void> {
+  /**
+   * Stores a memory embedding. Free-tier users are capped at
+   * `FREE_TRIAL_MEMORIES` cross-session (personal) memories; project memories
+   * are not counted. Returns `false` when the store was skipped due to the
+   * free-tier limit.
+   */
+  async add(memory: Omit<StoredMemoryVector, "embedding">): Promise<boolean> {
     const embedding = await embedText(memory.content);
     const db = getAdminDb();
     if (db) {
+      if (!memory.projectId) {
+        const tier = await getUserTier(db, memory.userId);
+        if (tier === "free") {
+          const count = await countFreeMemories(db, memory.userId);
+          if (count >= FREE_TRIAL_MEMORIES) return false;
+        }
+      }
       const ref = memory.projectId
         ? db
             .collection("projects")
@@ -121,6 +139,7 @@ export class MemoryVectorStore {
             updatedAt: adminTimestamp(),
           });
       }
+      return true;
     } else {
       this.memory.set(memory.id, {
         id: memory.id,
@@ -132,6 +151,7 @@ export class MemoryVectorStore {
         timestamp: memory.timestamp,
         embedding,
       });
+      return true;
     }
   }
 

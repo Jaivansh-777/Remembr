@@ -22,6 +22,7 @@ import {
 
 import { db } from "@/lib/firebase";
 import { createId, type ChatDoc, type ChatMessage } from "@/lib/chat";
+import { FREE_TRIAL_MEMORIES } from "@/lib/trial-protection";
 import {
   generateInviteCode,
   toProjectDoc,
@@ -242,13 +243,20 @@ export async function addMemory(
   return id;
 }
 
+export interface AddMemoriesResult {
+  /** Number of memories actually stored. */
+  stored: number;
+  /** True when the free-tier cross-session memory cap was hit. */
+  limitReached: boolean;
+}
+
 export async function addMemories(
   userId: string,
   memories: Omit<MemoryItem, "id" | "userId" | "timestamp">[],
   chatId: string,
   opts?: { projectId?: string; userName?: string }
-) {
-  if (memories.length === 0) return;
+): Promise<AddMemoriesResult> {
+  if (memories.length === 0) return { stored: 0, limitReached: false };
   if (opts?.projectId) {
     await addProjectMemories(
       opts.projectId,
@@ -261,10 +269,37 @@ export async function addMemories(
         chatId,
       }))
     );
-    return;
+    return { stored: memories.length, limitReached: false };
   }
+
+  let toStore = memories;
+  let limitReached = false;
+
+  const userDoc = await getUserDoc(userId);
+  const tier = userDoc ? String(userDoc.tier ?? "free") : "free";
+  if (tier === "free") {
+    const snapshot = await getDocs(
+      query(memoriesCol(userId), limit(FREE_TRIAL_MEMORIES + 1))
+    );
+    const count = snapshot.size;
+    if (count >= FREE_TRIAL_MEMORIES) {
+      limitReached = true;
+      toStore = [];
+    } else {
+      const available = FREE_TRIAL_MEMORIES - count;
+      if (memories.length > available) {
+        toStore = memories.slice(0, available);
+        limitReached = true;
+      }
+    }
+  }
+
+  if (toStore.length === 0) {
+    return { stored: 0, limitReached };
+  }
+
   const batch = writeBatch(db);
-  for (const memory of memories) {
+  for (const memory of toStore) {
     const id = createId();
     batch.set(doc(memoriesCol(userId), id), {
       userId,
@@ -274,6 +309,7 @@ export async function addMemories(
     });
   }
   await batch.commit();
+  return { stored: toStore.length, limitReached };
 }
 
 function mapToProjectMemoryType(

@@ -26,7 +26,11 @@ import {
   isSupportedFileName,
   type FileDoc,
 } from "@/lib/file-types";
-import { addMemories } from "@/lib/firebase/firestore";
+import {
+  addMemories,
+  type AddMemoriesResult,
+} from "@/lib/firebase/firestore";
+import { UpgradePrompt } from "@/components/upgrade/UpgradePrompt";
 import { cn } from "@/lib/utils";
 
 type ItemStatus = "pending" | "uploading" | "processing" | "done" | "error";
@@ -60,6 +64,7 @@ export function FileUpload({
   const { tier } = useFiles(user?.uid ?? null);
   const [items, setItems] = useState<QueueItem[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const processingRef = useRef(false);
   const onUploadedRef = useRef(onUploaded);
@@ -184,9 +189,15 @@ export function FileUpload({
           expiresAt: payload.expiresAt ?? null,
         };
 
-        void storeFileMemory(user.uid, memoryDoc, projectId ?? undefined).catch(
-          (error) => console.warn("[file-upload] memory store failed:", error)
-        );
+        void storeFileMemory(user.uid, memoryDoc, projectId ?? undefined)
+          .then((result) => {
+            if (result.limitReached) {
+              setShowUpgradePrompt(true);
+            }
+          })
+          .catch((error) =>
+            console.warn("[file-upload] memory store failed:", error)
+          );
 
         setItems((prev) =>
           prev.map((it) =>
@@ -356,6 +367,11 @@ export function FileUpload({
           </button>
         </div>
       </div>
+
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+      />
     </div>
   );
 }
@@ -440,12 +456,12 @@ async function storeFileMemory(
   userId: string,
   file: FileDoc,
   projectId?: string
-) {
+): Promise<AddMemoriesResult> {
   const summary = file.summary?.trim();
   const content = summary
     ? `Uploaded file "${file.name}" — ${summary}`
     : `Uploaded file "${file.name}" (${file.category})`;
-  await addMemories(
+  return addMemories(
     userId,
     [
       {

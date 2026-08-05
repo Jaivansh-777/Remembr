@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
@@ -8,6 +8,8 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BlockedDeviceModal } from "@/components/upgrade/BlockedDeviceModal";
+import { generateFingerprint } from "@/lib/fingerprint";
 import {
   auth,
   getRedirectResult,
@@ -16,10 +18,13 @@ import {
   signInWithRedirect,
 } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import type { TrialBlockReason } from "@/lib/trial-protection";
 
 interface GoogleSignInProps {
   className?: string;
   label?: string;
+  /** Set true on flows that must never block (e.g. project invite joins). */
+  skipTrialCheck?: boolean;
 }
 
 function GoogleLogo() {
@@ -62,23 +67,68 @@ function getErrorMessage(error: unknown): string {
 export default function GoogleSignIn({
   className,
   label = "Sign in with Google",
+  skipTrialCheck = false,
 }: GoogleSignInProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [blocked, setBlocked] = useState<TrialBlockReason | null>(null);
+
+  /**
+   * Runs the free-trial guard after sign-in. Returns `false` (blocking the
+   * redirect to /chat) when this device/IP has already used the free trial.
+   * Fails open so a transient error never locks out a legitimate user.
+   */
+  const runTrialGuard = useCallback(
+    async (currentUser: { getIdToken: () => Promise<string> }): Promise<boolean> => {
+      if (skipTrialCheck) return true;
+      try {
+        const fingerprint = await generateFingerprint();
+        const token = await currentUser.getIdToken();
+        const response = await fetch("/api/auth/check-trial", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fingerprint }),
+        });
+        const data = (await response.json()) as {
+          eligible?: boolean;
+          reason?: TrialBlockReason;
+        };
+        if (!response.ok) {
+          console.warn("[signin] trial check failed:", data);
+          return true;
+        }
+        if (data.eligible === false) {
+          setBlocked(data.reason === "ip_limit" ? "ip_limit" : "device_used");
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.warn("[signin] trial check error:", error);
+        return true;
+      }
+    },
+    [skipTrialCheck]
+  );
 
   useEffect(() => {
     if (!auth) return;
     getRedirectResult(auth)
-      .then((result) => {
+      .then(async (result) => {
         if (result) {
-          router.replace("/chat");
+          const allowed = await runTrialGuard(result.user);
+          if (allowed) {
+            router.replace("/chat");
+          }
         }
       })
       .catch((error: unknown) => {
         toast.error(getErrorMessage(error));
       });
-  }, [router]);
+  }, [router, runTrialGuard]);
 
   const handleSignIn = async () => {
     if (!auth) {
@@ -89,7 +139,10 @@ export default function GoogleSignIn({
     try {
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
-        router.push("/chat");
+        const allowed = await runTrialGuard(result.user);
+        if (allowed) {
+          router.push("/chat");
+        }
       }
     } catch (error) {
       if (
@@ -115,27 +168,41 @@ export default function GoogleSignIn({
 
   if (user) {
     return (
-      <Button
-        asChild
-        className="h-12 w-full bg-white px-8 text-base font-medium text-[#0A0A0A] shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:opacity-90 sm:w-auto"
-      >
-        <Link href="/chat">Continue to chat</Link>
-      </Button>
+      <>
+        <Button
+          asChild
+          className="h-12 w-full bg-white px-8 text-base font-medium text-[#0A0A0A] shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:opacity-90 sm:w-auto"
+        >
+          <Link href="/chat">Continue to chat</Link>
+        </Button>
+        <BlockedDeviceModal
+          open={blocked !== null}
+          reason={blocked}
+          onClose={() => setBlocked(null)}
+        />
+      </>
     );
   }
 
   return (
-    <Button
-      type="button"
-      onClick={handleSignIn}
-      disabled={pending}
-      className={cn(
-        "h-12 w-full gap-3 rounded-lg border border-[#DADCE0] bg-white px-6 text-base font-medium text-black hover:bg-[#F5F5F5] disabled:opacity-70 sm:w-auto",
-        className
-      )}
-    >
-      <GoogleLogo />
-      {pending ? "Signing in…" : label}
-    </Button>
+    <>
+      <Button
+        type="button"
+        onClick={handleSignIn}
+        disabled={pending}
+        className={cn(
+          "h-12 w-full gap-3 rounded-lg border border-[#DADCE0] bg-white px-6 text-base font-medium text-black hover:bg-[#F5F5F5] disabled:opacity-70 sm:w-auto",
+          className
+        )}
+      >
+        <GoogleLogo />
+        {pending ? "Signing in…" : label}
+      </Button>
+      <BlockedDeviceModal
+        open={blocked !== null}
+        reason={blocked}
+        onClose={() => setBlocked(null)}
+      />
+    </>
   );
 }
