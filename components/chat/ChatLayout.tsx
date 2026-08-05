@@ -255,7 +255,15 @@ export function ChatLayout() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[#0A0A0A] text-white">
+    <div className="relative flex h-dvh overflow-hidden bg-[#0A0A0A] text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-0"
+      >
+        <div className="absolute -top-32 left-1/4 size-[26rem] rounded-full bg-[#7C3AED]/15 blur-3xl" />
+        <div className="absolute -right-32 bottom-0 size-96 rounded-full bg-[#4F46E5]/10 blur-3xl" />
+      </div>
+
       <Sidebar
         chats={chats}
         activeChatId={activeChatId}
@@ -267,7 +275,7 @@ export function ChatLayout() {
         onRename={(chatId, title) => void handleRename(chatId, title)}
       />
 
-      <div className={cn("flex min-w-0 flex-1 flex-col")}>
+      <div className={cn("relative flex min-w-0 flex-1 flex-col")}>
         <ChatHeader
           mode={mode}
           onModeChange={handleModeChange}

@@ -71,7 +71,7 @@ export function Sidebar({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-[#0F0F0F] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:static md:z-auto md:shrink-0 md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-[#0F0F0F]/90 backdrop-blur-2xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:static md:z-auto md:shrink-0 md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -94,7 +94,7 @@ export function Sidebar({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="chat-scrollbar flex-1 overflow-y-auto p-2">
           {chats.length === 0 ? (
             <div className="px-3 py-8 text-center text-sm text-[#A1A1A1]">
               No conversations yet.

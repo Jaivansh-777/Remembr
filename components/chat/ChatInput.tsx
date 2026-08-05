@@ -45,13 +45,14 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canSend = (value.trim().length > 0 || files.length > 0) && !disabled && !uploading;
+  const canSend =
+    (value.trim().length > 0 || files.length > 0) && !disabled && !uploading;
 
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [value]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -127,7 +128,7 @@ export function ChatInput({
           {files.map((file, index) => (
             <span
               key={`${file.name}-${index}`}
-              className="flex items-center gap-1.5 rounded-full border border-[#7C3AED]/40 bg-[#7C3AED]/10 px-3 py-1 text-xs text-[#C4B5FD]"
+              className="flex items-center gap-1.5 rounded-full border border-[#7C3AED]/40 bg-[#7C3AED]/15 px-3 py-1 text-xs text-[#C4B5FD] backdrop-blur-xl"
             >
               <span className="max-w-40 truncate">{file.name}</span>
               <button
@@ -145,13 +146,13 @@ export function ChatInput({
         </div>
       ) : null}
 
-      <div className="flex items-end gap-1.5 rounded-2xl border border-white/10 bg-[#1A1A1A] px-2 py-2 transition-colors focus-within:border-[#7C3AED]/60 sm:px-3">
+      <div className="flex items-end gap-1 rounded-full border border-white/10 bg-[#1A1A1A]/70 py-1.5 pr-1.5 pl-1.5 backdrop-blur-xl transition-colors focus-within:border-[#7C3AED]/60 sm:gap-1.5 sm:pl-2">
         <button
           type="button"
           aria-label="Attach file"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white disabled:opacity-40"
+          className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white disabled:opacity-40"
         >
           <Paperclip className="size-4.5" />
         </button>
@@ -170,8 +171,8 @@ export function ChatInput({
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder="Ask Remembr anything... (shift+enter for new line)"
-          className="max-h-[200px] flex-1 resize-none bg-transparent py-2 text-sm leading-relaxed text-white placeholder:text-[#A1A1A1] focus:outline-none"
+          placeholder="Message Remembr…"
+          className="min-h-10 max-h-40 flex-1 resize-none bg-transparent py-2.5 text-sm leading-relaxed text-white placeholder:text-[#A1A1A1] focus:outline-none"
         />
 
         <button
@@ -180,7 +181,7 @@ export function ChatInput({
           onClick={onMagic}
           disabled={disabled || uploading}
           className={cn(
-            "flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white",
+            "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white",
             "disabled:pointer-events-none disabled:opacity-40"
           )}
         >
@@ -193,8 +194,10 @@ export function ChatInput({
           onClick={() => void handleSend()}
           disabled={!canSend}
           className={cn(
-            "flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#4F46E5] text-white shadow-[0_0_14px_rgba(124,58,237,0.45)] transition-all",
-            "hover:opacity-90 disabled:pointer-events-none disabled:opacity-30"
+            "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-all",
+            canSend
+              ? "bg-[#7C3AED] text-white shadow-[0_0_18px_rgba(124,58,237,0.5)] hover:bg-[#6D28D9]"
+              : "bg-white/10 text-[#A1A1A1] disabled:pointer-events-none"
           )}
         >
           {uploading ? (
@@ -204,6 +207,9 @@ export function ChatInput({
           )}
         </button>
       </div>
+      <p className="hidden text-center text-[10px] text-[#6B6B6B] sm:block">
+        Remembr can make mistakes. Enter to send · Shift+Enter for a new line
+      </p>
     </div>
   );
 }

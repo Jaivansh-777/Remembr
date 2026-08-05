@@ -20,10 +20,18 @@ export function MessageList({
   empty,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) {
+    if (el && stickToBottomRef.current) {
       el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }
   }, [messages, streaming, thinking]);
@@ -31,29 +39,23 @@ export function MessageList({
   const hasContent =
     messages.length > 0 || Boolean(streaming) || thinking;
 
-  if (!hasContent) {
-    return (
-      <div
-        ref={scrollRef}
-        className="flex min-h-full flex-1 flex-col overflow-y-auto"
-      >
-        {empty}
-      </div>
-    );
-  }
-
   return (
     <div
       ref={scrollRef}
-      className="flex min-h-full flex-1 flex-col overflow-y-auto"
+      onScroll={handleScroll}
+      className="chat-scrollbar flex min-h-full flex-1 flex-col overflow-y-auto"
     >
-      <div className="flex flex-col gap-4 pt-6 pb-4">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
-        ))}
-        {streaming ? <StreamingBubble content={streaming} /> : null}
-        {thinking && !streaming ? <TypingIndicator /> : null}
-      </div>
+      {hasContent ? (
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-3 py-6 sm:px-6">
+          {messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))}
+          {streaming ? <StreamingBubble content={streaming} /> : null}
+          {thinking && !streaming ? <TypingIndicator /> : null}
+        </div>
+      ) : (
+        empty
+      )}
     </div>
   );
 }
