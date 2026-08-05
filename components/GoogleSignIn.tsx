@@ -117,7 +117,7 @@ export default function GoogleSignIn({
     return (
       <Button
         asChild
-        className="h-12 w-full bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] px-8 text-base font-medium text-white shadow-[0_0_30px_rgba(124,58,237,0.45)] hover:opacity-90 sm:w-auto"
+        className="h-12 w-full bg-white px-8 text-base font-medium text-[#0A0A0A] shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:opacity-90 sm:w-auto"
       >
         <Link href="/chat">Continue to chat</Link>
       </Button>

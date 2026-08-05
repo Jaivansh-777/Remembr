@@ -45,7 +45,7 @@ export function Header() {
           href="/"
           className="flex items-center gap-2 text-lg font-semibold tracking-tight text-white"
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#4F46E5]">
+          <span className="flex size-7 items-center justify-center rounded-lg border border-white/15 bg-white/10 backdrop-blur-xl">
             <Sparkles className="size-4 text-white" />
           </span>
           Remembr
@@ -57,7 +57,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]"
+                  className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <Avatar size="sm">
                     <AvatarImage

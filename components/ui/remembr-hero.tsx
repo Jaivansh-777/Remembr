@@ -51,30 +51,30 @@ const logos: Logo[] = [
 ]
 
 const memoryNodes = [
-  { top: "12%", left: "8%", size: "h-1.5 w-1.5", delay: "0s", color: "bg-[#7C3AED]" },
-  { top: "22%", left: "86%", size: "h-2 w-2", delay: "0.8s", color: "bg-[#4F46E5]" },
-  { top: "38%", left: "14%", size: "h-1 w-1", delay: "1.6s", color: "bg-[#6D28D9]" },
-  { top: "56%", left: "90%", size: "h-1.5 w-1.5", delay: "2.4s", color: "bg-[#7C3AED]" },
-  { top: "70%", left: "5%", size: "h-2 w-2", delay: "3.2s", color: "bg-[#4F46E5]" },
-  { top: "30%", left: "55%", size: "h-1 w-1", delay: "1.2s", color: "bg-[#6D28D9]" },
-  { top: "80%", left: "78%", size: "h-1.5 w-1.5", delay: "4s", color: "bg-[#7C3AED]" },
+  { top: "12%", left: "8%", size: "h-1.5 w-1.5", delay: "0s", color: "bg-white/80" },
+  { top: "22%", left: "86%", size: "h-2 w-2", delay: "0.8s", color: "bg-white/50" },
+  { top: "38%", left: "14%", size: "h-1 w-1", delay: "1.6s", color: "bg-[#A1A1A1]" },
+  { top: "56%", left: "90%", size: "h-1.5 w-1.5", delay: "2.4s", color: "bg-white/80" },
+  { top: "70%", left: "5%", size: "h-2 w-2", delay: "3.2s", color: "bg-white/50" },
+  { top: "30%", left: "55%", size: "h-1 w-1", delay: "1.2s", color: "bg-[#A1A1A1]" },
+  { top: "80%", left: "78%", size: "h-1.5 w-1.5", delay: "4s", color: "bg-white/80" },
 ]
 
 const RemembrHero = () => {
   return (
     <section
       id="signin"
-      className="relative min-h-[calc(100vh-50px)] overflow-hidden bg-[linear-gradient(to_bottom,#faf8ff,#ece7fb_40%,#d6cbf2_74%,#b79ae8_88%)] dark:bg-[linear-gradient(to_bottom,#0a0a0a,#1a0a2e_40%,#2d1b69_74%,#6d28d9_88%)]"
+      className="relative min-h-[calc(100vh-50px)] overflow-hidden bg-[linear-gradient(to_bottom,#fafafa,#f4f4f4_40%,#e8e8e8_74%,#d4d4d4_88%)] dark:bg-[linear-gradient(to_bottom,#0a0a0a,#141414_40%,#1f1f1f_74%,#2b2b2b_88%)]"
     >
-      <div className="absolute left-1/2 top-[calc(100%-90px)] lg:top-[calc(100%-150px)] h-[500px] w-[700px] md:h-[500px] md:w-[1100px] lg:h-[750px] lg:w-full -translate-x-1/2 rounded-[100%] border-[#6D28D9]/40 bg-black bg-[radial-gradient(closest-side,#0a0a0a_82%,#6d28d9)]" />
+      <div className="absolute left-1/2 top-[calc(100%-90px)] lg:top-[calc(100%-150px)] h-[500px] w-[700px] md:h-[500px] md:w-[1100px] lg:h-[750px] lg:w-full -translate-x-1/2 rounded-[100%] border-white/10 bg-black bg-[radial-gradient(closest-side,#0a0a0a_82%,#ffffff)]" />
       <div className="absolute left-0 top-0 z-0 grid h-full w-full grid-cols-[clamp(28px,10vw,120px)_auto_clamp(28px,10vw,120px)] border-b border-white/10">
         <div className="col-span-1 flex h-full items-center justify-center" />
         <div className="col-span-1 flex h-full items-center justify-center border-x border-white/10" />
         <div className="col-span-1 flex h-full items-center justify-center" />
       </div>
-      <figure className="pointer-events-none absolute -bottom-[70%] left-1/2 z-0 block aspect-square w-[520px] -translate-x-1/2 rounded-full bg-[#6D28D9]/40 blur-[200px]" />
-      <figure className="pointer-events-none absolute left-[4vw] top-[64px] z-20 hidden aspect-square w-[32vw] rounded-full bg-[#1a0a2e]/60 opacity-50 blur-[100px] md:block dark:bg-[#4F46E5]/20" />
-      <figure className="pointer-events-none absolute -bottom-[50px] right-[7vw] z-20 hidden aspect-square w-[30vw] rounded-full bg-[#1a0a2e]/60 opacity-50 blur-[100px] md:block dark:bg-[#7C3AED]/20" />
+      <figure className="pointer-events-none absolute -bottom-[70%] left-1/2 z-0 block aspect-square w-[520px] -translate-x-1/2 rounded-full bg-white/10 blur-[200px]" />
+      <figure className="pointer-events-none absolute left-[4vw] top-[64px] z-20 hidden aspect-square w-[32vw] rounded-full bg-black/40 opacity-50 blur-[100px] md:block dark:bg-white/10" />
+      <figure className="pointer-events-none absolute -bottom-[50px] right-[7vw] z-20 hidden aspect-square w-[30vw] rounded-full bg-black/40 opacity-50 blur-[100px] md:block dark:bg-white/10" />
 
       <div className="pointer-events-none absolute inset-0 z-10">
         {memoryNodes.map((node, i) => (
@@ -106,7 +106,7 @@ const RemembrHero = () => {
           <div className="mx-auto flex min-h-[380px] max-w-[92vw] shrink-0 flex-col items-center justify-center gap-4 px-2 py-4 sm:max-w-[80vw] sm:px-10 sm:py-10 lg:px-24">
             <h1 className="text-pretty text-center text-3xl font-medium leading-[1.08] tracking-[-1.44px] text-[#171717] dark:text-white sm:text-4xl md:text-6xl md:leading-[1.05] md:tracking-[-2.16px] lg:text-[clamp(50px,7vw,75px)]">
               <span className="block">the ai which</span>
-              <span className="block bg-gradient-to-r from-[#171717] via-[#4F46E5] to-[#7C3AED] bg-clip-text text-transparent dark:from-white dark:via-[#C4B5FD] dark:to-[#8B5CF6]">
+              <span className="block bg-gradient-to-r from-[#171717] via-[#525252] to-[#171717] bg-clip-text text-transparent dark:from-white dark:via-[#D4D4D4] dark:to-[#A3A3A3]">
                 remembr everything
               </span>
             </h1>
@@ -115,7 +115,7 @@ const RemembrHero = () => {
               conversations — across sessions, forever.
             </h2>
 
-            <div className="mt-2 flex items-center gap-2 rounded-full border border-[#7C3AED]/30 bg-[#7C3AED]/10 px-4 py-1.5 text-sm text-[#6D28D9] backdrop-blur dark:border-[#7C3AED]/40 dark:bg-[#7C3AED]/15 dark:text-[#C4B5FD]">
+            <div className="mt-2 flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm text-[#A1A1A1] backdrop-blur-xl dark:border-white/20 dark:bg-white/10 dark:text-white">
               <span className="animate-pulse">🧠</span>
               Soulmate Mode — remembers everything
             </div>
@@ -130,13 +130,13 @@ const RemembrHero = () => {
             <div className="flex flex-col gap-3 sm:flex-row">
               <GoogleSignIn
                 label="Start chatting — it&apos;s free"
-                className="h-12 w-full border-[#7C3AED]/40 bg-white/5 px-6 text-sm font-medium text-[#171717] backdrop-blur hover:bg-white/10 dark:text-white sm:w-auto"
+                className="h-12 w-full border-white/15 bg-white/10 px-6 text-sm font-medium text-white backdrop-blur-xl hover:bg-white/20 sm:w-auto"
               />
               <Button
                 size="lg"
                 asChild
                 variant="ghost"
-                className="h-12 w-full px-6 text-sm font-medium text-[#5b5b5b] hover:bg-white/10 dark:text-[#C4B5FD] sm:w-auto"
+                className="h-12 w-full px-6 text-sm font-medium text-[#5b5b5b] hover:bg-white/10 dark:text-[#A1A1A1] sm:w-auto"
               >
                 <Link href="/demo">See how it works</Link>
               </Button>
