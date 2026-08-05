@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/profile",
   "/settings",
   "/projects",
+  "/files",
 ];
 
 export function proxy(request: NextRequest) {

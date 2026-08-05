@@ -51,5 +51,12 @@ service cloud.firestore {
       allow create: if projectMember(projectId);
       allow delete: if projectMember(projectId);
     }
+
+    match /files/{fileId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
   }
 }

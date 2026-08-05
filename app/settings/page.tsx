@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MemoryDashboard } from "@/components/settings/MemoryDashboard";
+import { StorageMeter } from "@/components/files/StorageMeter";
 import { MemoryToggle } from "@/components/chat/MemoryToggle";
 import { RateLimitBadge } from "@/components/chat/RateLimitBadge";
 import { useAuth } from "@/lib/auth-context";
@@ -55,6 +56,22 @@ function SettingsContent() {
           value={mode}
           onChange={handleModeChange}
         />
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-sm font-semibold text-white">File storage</h2>
+          <p className="text-xs text-[#A1A1A1]">
+            Space used by uploaded files and documents
+          </p>
+        </div>
+        <StorageMeter userId={user?.uid ?? null} />
+        <a
+          href="/files"
+          className="mt-1 flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/10"
+        >
+          Manage files
+        </a>
       </section>
 
       <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5">

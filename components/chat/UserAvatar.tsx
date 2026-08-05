@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Database, LogOut, Settings } from "lucide-react";
+import { Database, Folder, LogOut, Settings } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { toast } from "sonner";
 
@@ -68,6 +68,13 @@ export function UserAvatar() {
           >
             <Database className="size-4" />
             Memory Dashboard
+          </DropdownMenuPrimitive.Item>
+          <DropdownMenuPrimitive.Item
+            onSelect={() => router.push("/files")}
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white outline-none select-none data-[highlighted]:bg-white/15"
+          >
+            <Folder className="size-4" />
+            Files
           </DropdownMenuPrimitive.Item>
           <DropdownMenuPrimitive.Separator className="my-1.5 h-px bg-white/10" />
           <DropdownMenuPrimitive.Item

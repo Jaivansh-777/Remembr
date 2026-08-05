@@ -178,6 +178,7 @@ export interface MemoryPromptInput {
   recentContext?: string[];
   scope?: "personal" | "team";
   projectName?: string;
+  files?: { name: string; category?: string; summary?: string; size?: number }[];
 }
 
 /** Builds the system prompt that injects recalled memories. */
@@ -185,6 +186,7 @@ export function buildSystemPrompt(input: MemoryPromptInput): string {
   const mode = input.mode || "buddy";
   const memories = input.memories ?? [];
   const isTeam = input.scope === "team";
+  const files = input.files ?? [];
 
   let prompt = `You are Remembr, a memory-first AI assistant. You help users with their projects, code, documents, and ideas.`;
 
@@ -201,6 +203,19 @@ export function buildSystemPrompt(input: MemoryPromptInput): string {
     prompt += `\n\n[RECENT CONTEXT]\nLast conversations discussed: ${input.recentContext.join(
       ", "
     )}.`;
+  }
+
+  if (files.length > 0) {
+    prompt += `\n\n[FILE REFERENCES]\nThe user has attached the following files to this message. Use their summaries and content to answer questions about them:\n${files
+      .map(
+        (file, index) =>
+          `${index + 1}. ${file.name}${
+            file.category ? ` (${file.category})` : ""
+          }${file.size ? ` — ${file.size} bytes` : ""}${
+            file.summary ? ` — ${file.summary}` : ""
+          }`
+      )
+      .join("\n")}`;
   }
 
   prompt += `\n\n[INSTRUCTION]\nUse these memories to provide personalized, contextual responses. Never contradict these facts unless the user explicitly changes them.`;

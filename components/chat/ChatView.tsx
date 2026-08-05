@@ -10,6 +10,7 @@ interface ChatViewProps {
   streaming?: string | null;
   thinking?: boolean;
   userId?: string | null;
+  projectId?: string | null;
   onSend: (text: string, attachments: Attachment[]) => void;
   onMagic: () => void;
   onPickSuggestion: (text: string) => void;
@@ -20,6 +21,7 @@ export function ChatView({
   streaming,
   thinking,
   userId,
+  projectId,
   onSend,
   onMagic,
   onPickSuggestion,
@@ -42,6 +44,7 @@ export function ChatView({
             onMagic={onMagic}
             disabled={Boolean(thinking || streaming)}
             userId={userId}
+            projectId={projectId}
           />
         </div>
       </div>

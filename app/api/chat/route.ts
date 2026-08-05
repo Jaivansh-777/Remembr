@@ -14,7 +14,7 @@ import {
 } from "@/lib/ai/memory";
 import { hasConfiguredProvider, streamWithFallback } from "@/lib/ai/router";
 import { vectorStore } from "@/lib/vector";
-import { createId } from "@/lib/chat";
+import { createId, type Attachment } from "@/lib/chat";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ interface ChatRequestBody {
   projectId?: string;
   projectName?: string;
   userName?: string;
-  attachments?: string[];
+  attachments?: Attachment[];
   memories?: { content: string; type?: string }[];
   history?: { role: "user" | "assistant"; content: string }[];
 }
@@ -86,20 +86,45 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const attachments = (body.attachments ?? []).filter(
+    (attachment): attachment is Attachment =>
+      Boolean(attachment) && typeof attachment.name === "string"
+  );
+
   const system = buildSystemPrompt({
     mode: body.memoryMode ?? "buddy",
     memories: body.memories ?? [],
     scope: body.projectId ? "team" : "personal",
     projectName: body.projectName,
+    files: attachments.map((attachment) => ({
+      name: attachment.name,
+      category: attachment.category,
+      summary: attachment.summary,
+      size: attachment.size,
+    })),
   });
 
   const history = (body.history ?? [])
     .filter((m) => m.content)
     .slice(-20)
     .map((m) => ({ role: m.role, content: m.content }));
+
+  const fileContent = attachments
+    .filter((attachment) => typeof attachment.text === "string" && attachment.text)
+    .map(
+      (attachment) =>
+        `--- ${attachment.name} ---\n${String(attachment.text).slice(0, 4000)}`
+    );
+  const userMessage =
+    fileContent.length > 0
+      ? `${message}\n\n[ATTACHED FILE CONTENTS]\n${fileContent
+          .join("\n\n")
+          .slice(0, 16000)}`
+      : message;
+
   const messages = [
     ...history,
-    { role: "user" as const, content: message },
+    { role: "user" as const, content: userMessage },
   ];
 
   const encoder = new TextEncoder();

@@ -1,25 +1,16 @@
 "use client";
 
-import { FileText, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
+import { FilePreview } from "@/components/files/FilePreview";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
-import type { Attachment, ChatMessage } from "@/lib/chat";
+import type { ChatMessage } from "@/lib/chat";
 import { cn } from "@/lib/utils";
-
-function isImage(attachment: Attachment) {
-  return attachment.type.startsWith("image/");
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function formatTime(timestamp: number): string {
   if (!timestamp) return "";
@@ -27,33 +18,6 @@ function formatTime(timestamp: number): string {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function AttachmentPreview({ attachment }: { attachment: Attachment }) {
-  if (isImage(attachment)) {
-    return (
-      <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={attachment.url}
-          alt={attachment.name}
-          className="max-h-48 rounded-xl border border-white/10 object-cover transition-opacity hover:opacity-90"
-        />
-      </a>
-    );
-  }
-  return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-[#A1A1A1] backdrop-blur-xl transition-colors hover:border-white/30 hover:text-white"
-    >
-      <FileText className="size-4 shrink-0 text-[#A1A1A1]" />
-      <span className="truncate">{attachment.name}</span>
-      <span className="ml-auto shrink-0">{formatBytes(attachment.size)}</span>
-    </a>
-  );
 }
 
 function RemembrAvatar({ className }: { className?: string }) {
@@ -97,7 +61,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             {hasAttachments ? (
               <div className="mb-2 flex flex-col gap-1.5">
                 {message.attachments?.map((attachment, index) => (
-                  <AttachmentPreview key={index} attachment={attachment} />
+                  <FilePreview key={index} attachment={attachment} />
                 ))}
               </div>
             ) : null}
@@ -117,20 +81,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <RemembrAvatar className="size-7 sm:size-8" />
       <div className="flex max-w-[90%] flex-col sm:max-w-[80%]">
         <div className="rounded-2xl rounded-bl-md border border-white/10 bg-[#1A1A1A]/70 px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-white shadow-[0_4px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-          {hasAttachments ? (
-            <div className="mb-2 flex flex-col gap-1.5">
-              {message.attachments?.map((attachment, index) => (
-                <AttachmentPreview key={index} attachment={attachment} />
-              ))}
-            </div>
+            {hasAttachments ? (
+              <div className="mb-2 flex flex-col gap-1.5">
+                {message.attachments?.map((attachment, index) => (
+                  <FilePreview key={index} attachment={attachment} />
+                ))}
+              </div>
+            ) : null}
+            {message.content}
+          </div>
+          {time ? (
+            <span className="mt-1 px-1 text-[10px] text-[#6B6B6B]">{time}</span>
           ) : null}
-          {message.content}
         </div>
-        {time ? (
-          <span className="mt-1 px-1 text-[10px] text-[#6B6B6B]">{time}</span>
-        ) : null}
       </div>
-    </div>
   );
 }
 

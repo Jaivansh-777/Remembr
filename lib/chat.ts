@@ -47,6 +47,11 @@ export interface Attachment {
   url: string;
   type: string;
   size: number;
+  fileId?: string;
+  category?: string;
+  summary?: string;
+  text?: string;
+  processed?: boolean;
 }
 
 export interface ChatMessage {

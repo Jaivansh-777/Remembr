@@ -443,6 +443,7 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
           streaming={streaming}
           thinking={thinking}
           userId={user.uid}
+          projectId={projectId}
           onSend={(text, attachments) => void handleSend(text, attachments)}
           onMagic={handleMagic}
           onPickSuggestion={(text) => void handleSend(text, [])}
