@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +20,11 @@ import { useAuth } from "@/lib/auth-context";
 export function Header() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/chat")) {
+    return null;
+  }
 
   const handleSignOut = async () => {
     try {

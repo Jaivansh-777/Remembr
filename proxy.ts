@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/chat", "/dashboard", "/profile"];
+const PROTECTED_PREFIXES = ["/chat", "/dashboard", "/profile", "/settings"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

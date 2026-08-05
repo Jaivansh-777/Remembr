@@ -23,7 +23,7 @@ import {
   serverTimestamp,
   type Firestore,
 } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -47,8 +47,8 @@ const app: FirebaseApp | null = hasConfig
   : null;
 const auth = app ? getAuth(app) : null;
 const googleProvider = new GoogleAuthProvider();
-const db: Firestore | null = app ? getFirestore(app) : null;
-const storage = app ? getStorage(app) : null;
+const db = (app ? getFirestore(app) : null) as unknown as Firestore;
+const storage = (app ? getStorage(app) : null) as unknown as FirebaseStorage;
 
 export {
   app,

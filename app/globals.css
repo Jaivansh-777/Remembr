@@ -7,6 +7,9 @@
 @theme inline {
   --animate-x-slider: x-slider 40s linear infinite;
   --animate-drop-in: drop-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-dropdown-in: dropdown-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-dropdown-out: dropdown-out 0.15s ease-in both;
+  --animate-message-in: message-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -158,5 +161,38 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdown-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
