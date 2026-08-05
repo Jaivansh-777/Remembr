@@ -67,7 +67,7 @@ const RemembrHero = () => {
       className="relative min-h-[calc(100vh-50px)] overflow-hidden bg-[linear-gradient(to_bottom,#fafafa,#f4f4f4_40%,#e8e8e8_74%,#d4d4d4_88%)] dark:bg-[linear-gradient(to_bottom,#0a0a0a,#141414_40%,#1f1f1f_74%,#2b2b2b_88%)]"
     >
       <div className="absolute left-1/2 top-[calc(100%-90px)] lg:top-[calc(100%-150px)] h-[500px] w-[700px] md:h-[500px] md:w-[1100px] lg:h-[750px] lg:w-full -translate-x-1/2 rounded-[100%] border-white/10 bg-black bg-[radial-gradient(closest-side,#0a0a0a_82%,#ffffff)]" />
-      <div className="absolute left-0 top-0 z-0 grid h-full w-full grid-cols-[clamp(28px,10vw,120px)_auto_clamp(28px,10vw,120px)] border-b border-white/10">
+      <div className="absolute left-0 top-0 z-0 grid h-full w-full grid-cols-[clamp(28px,10vw,120px)_auto_clamp(28px,10vw,120px)]">
         <div className="col-span-1 flex h-full items-center justify-center" />
         <div className="col-span-1 flex h-full items-center justify-center border-x border-white/10" />
         <div className="col-span-1 flex h-full items-center justify-center" />
@@ -95,27 +95,27 @@ const RemembrHero = () => {
           className="animate-drop-in flex flex-col items-center justify-end"
           style={{ animationDelay: "0.1s" }}
         >
-          <div className="flex items-center gap-2 border border-b-0 border-white/5 px-4 py-2 dark:border-white/10">
-            <p className="text-sm tracking-tight text-[#5b5b5b] dark:text-[#A1A1A1]">
+          <div className="flex items-center gap-2 border border-b-0 border-white/5 px-5 py-2.5 dark:border-white/10">
+            <p className="text-base tracking-tight text-[#5b5b5b] dark:text-[#A1A1A1]">
               Memory-first AI — never re-explain yourself again
             </p>
           </div>
         </div>
 
         <div className="animate-drop-in" style={{ animationDelay: "0.25s" }}>
-          <div className="mx-auto flex min-h-[380px] max-w-[92vw] shrink-0 flex-col items-center justify-center gap-4 px-2 py-4 sm:max-w-[80vw] sm:px-10 sm:py-10 lg:px-24">
-            <h1 className="text-pretty text-center text-3xl font-medium leading-[1.08] tracking-[-1.44px] text-[#171717] dark:text-white sm:text-4xl md:text-6xl md:leading-[1.05] md:tracking-[-2.16px] lg:text-[clamp(50px,7vw,75px)]">
+          <div className="mx-auto flex min-h-[440px] max-w-[92vw] shrink-0 flex-col items-center justify-center gap-6 px-2 py-4 sm:max-w-[80vw] sm:px-10 sm:py-10 lg:px-24">
+            <h1 className="text-pretty text-center text-4xl font-medium leading-[1.08] tracking-[-1.44px] text-[#171717] dark:text-white sm:text-5xl md:text-7xl md:leading-[1.05] md:tracking-[-2.16px] lg:text-[clamp(64px,9vw,96px)]">
               <span className="block">the ai which</span>
               <span className="block bg-gradient-to-r from-[#171717] via-[#525252] to-[#171717] bg-clip-text text-transparent dark:from-white dark:via-[#D4D4D4] dark:to-[#A3A3A3]">
                 remembr everything
               </span>
             </h1>
-            <h2 className="max-w-2xl text-pretty text-center text-base text-[#5b5b5b] dark:text-[#A1A1A1] md:text-lg">
+            <h2 className="max-w-3xl text-pretty text-center text-lg text-[#5b5b5b] dark:text-[#A1A1A1] md:text-xl">
               Chat with an AI that remembers your projects, preferences, and
               conversations — across sessions, forever.
             </h2>
 
-            <div className="mt-2 flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm text-[#A1A1A1] backdrop-blur-xl dark:border-white/20 dark:bg-white/10 dark:text-white">
+            <div className="mt-2 flex items-center gap-2.5 rounded-full border border-white/15 bg-white/10 px-5 py-2 text-base text-[#A1A1A1] backdrop-blur-xl dark:border-white/20 dark:bg-white/10 dark:text-white">
               <span className="animate-pulse">🧠</span>
               Soulmate Mode — remembers everything
             </div>
@@ -126,17 +126,17 @@ const RemembrHero = () => {
           className="animate-drop-in flex items-start justify-center px-8 sm:px-24"
           style={{ animationDelay: "0.45s" }}
         >
-          <div className="flex w-full max-w-[92vw] flex-col items-center justify-center gap-4 pb-10 sm:max-w-[80vw] md:max-w-[560px]">
-            <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex w-full max-w-[92vw] flex-col items-center justify-center gap-4 pb-10 sm:max-w-[80vw] md:max-w-[640px]">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <GoogleSignIn
                 label="Start chatting — it&apos;s free"
-                className="h-12 w-full border-white/15 bg-white/10 px-6 text-sm font-medium text-white backdrop-blur-xl hover:bg-white/20 sm:w-auto"
+                className="h-14 w-full border-white/15 bg-white/10 px-8 text-base font-medium text-white backdrop-blur-xl hover:bg-white/20 sm:w-auto"
               />
               <Button
                 size="lg"
                 asChild
                 variant="ghost"
-                className="h-12 w-full px-6 text-sm font-medium text-[#5b5b5b] hover:bg-white/10 dark:text-[#A1A1A1] sm:w-auto"
+                className="h-14 w-full px-8 text-base font-medium text-[#5b5b5b] hover:bg-white/10 dark:text-[#A1A1A1] sm:w-auto"
               >
                 <Link href="/demo">See how it works</Link>
               </Button>
@@ -157,13 +157,13 @@ const RemembrHero = () => {
 
 const AnimatedLogoCloud = () => {
   return (
-    <div className="w-full py-12">
+    <div className="w-full py-16">
       <div className="mx-auto w-full px-4 md:px-8">
-        <p className="mb-6 text-center text-sm text-[#5b5b5b] dark:text-[#A1A1A1]">
+        <p className="mb-8 text-center text-base text-[#5b5b5b] dark:text-[#A1A1A1]">
           Trusted by the AI ecosystem
         </p>
         <div
-          className="group relative mt-6 flex gap-6 overflow-hidden p-2"
+          className="group relative mt-6 flex gap-8 overflow-hidden p-2"
           style={{
             maskImage:
               "linear-gradient(to left, transparent 0%, black 20%, black 80%, transparent 95%)",
@@ -174,28 +174,28 @@ const AnimatedLogoCloud = () => {
           {[0, 1].map((index) => (
             <div
               key={index}
-              className="flex shrink-0 animate-x-slider flex-row justify-around gap-6"
+              className="flex shrink-0 animate-x-slider flex-row justify-around gap-8"
             >
               {logos.map((logo, key) => (
                 <div
                   key={key}
-                  className="flex flex-none items-center gap-2 opacity-60 transition-opacity duration-300 hover:opacity-100"
+                  className="flex flex-none items-center gap-2.5 opacity-60 transition-opacity duration-300 hover:opacity-100"
                 >
-                  <span className="relative flex h-6 w-6 items-center justify-center">
-                    <logo.icon className="absolute h-5 w-5 text-[#5b5b5b] dark:text-[#A1A1A1]" />
+                  <span className="relative flex h-7 w-7 items-center justify-center">
+                    <logo.icon className="absolute h-6 w-6 text-[#5b5b5b] dark:text-[#A1A1A1]" />
                     {logo.url && (
                       <img
                         src={logo.url}
                         alt={logo.name}
                         loading="lazy"
-                        className="relative h-6 w-6 object-contain brightness-0 dark:invert"
+                        className="relative h-7 w-7 object-contain brightness-0 dark:invert"
                         onError={(e) => {
                           e.currentTarget.style.display = "none"
                         }}
                       />
                     )}
                   </span>
-                  <span className="whitespace-nowrap text-sm text-[#5b5b5b] dark:text-[#A1A1A1]">
+                  <span className="whitespace-nowrap text-base text-[#5b5b5b] dark:text-[#A1A1A1]">
                     {logo.name}
                   </span>
                 </div>
