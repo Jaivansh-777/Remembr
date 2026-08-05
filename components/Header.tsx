@@ -82,6 +82,15 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link
+                    href="/upgrade"
+                    className="flex cursor-pointer items-center gap-2"
+                  >
+                    <Sparkles className="size-4" />
+                    Upgrade to Pro
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
                     href="/profile"
                     className="flex cursor-pointer items-center gap-2"
                   >

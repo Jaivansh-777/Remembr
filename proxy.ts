@@ -8,6 +8,9 @@ const PROTECTED_PREFIXES = [
   "/settings",
   "/projects",
   "/files",
+  "/upgrade",
+  "/payment",
+  "/admin",
 ];
 
 export function proxy(request: NextRequest) {
