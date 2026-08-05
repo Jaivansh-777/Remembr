@@ -27,9 +27,9 @@ export function PlanCard({ planId, isCurrent, selected, onSelect }: PlanCardProp
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-5 rounded-2xl border bg-white/5 p-6 backdrop-blur-xl transition-colors",
+        "relative flex h-full flex-col gap-5 rounded-2xl border bg-white/5 p-6 backdrop-blur-xl transition-all duration-300",
         selected
-          ? "border-[#7C3AED]/70"
+          ? "scale-[1.02] border-[#7C3AED] shadow-[0_0_30px_rgba(124,58,237,0.25)] ring-2 ring-[#7C3AED]/30"
           : "border-white/10 hover:border-white/25"
       )}
     >
@@ -78,14 +78,18 @@ export function PlanCard({ planId, isCurrent, selected, onSelect }: PlanCardProp
         </p>
         <button
           type="button"
-          disabled={disabled}
+          disabled={disabled || selected}
           onClick={onSelect}
           className={cn(
-            "flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold transition-all disabled:cursor-not-allowed",
+            "flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all disabled:cursor-not-allowed",
             disabled ? BUTTON_STYLES.free : BUTTON_STYLES[planId]
           )}
         >
-          {disabled ? "Current Plan" : `Upgrade to ${plan.label}`}
+          {disabled
+            ? "Current Plan"
+            : selected
+              ? "Opening checkout…"
+              : `Upgrade to ${plan.label}`}
         </button>
       </div>
     </div>
