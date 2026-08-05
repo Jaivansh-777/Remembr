@@ -12,14 +12,13 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
   type Unsubscribe,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 import { createId, type ChatDoc, type ChatMessage } from "@/lib/chat";
-
-const chatsCol = (userId: string) => collection(db, "chats", userId, "items");
 
 export async function createChat(userId: string): Promise<ChatDoc> {
   const id = createId();
@@ -50,24 +49,34 @@ export function watchChats(
   onUpdate: (chats: ChatDoc[]) => void
 ): Unsubscribe {
   const q = query(
-    chatsCol(userId),
-    orderBy("updatedAt", "desc"),
+    collection(db, "chats"),
+    where("userId", "==", userId),
     limit(200)
   );
-  return onSnapshot(q, (snapshot) => {
-    const chats = snapshot.docs.map((d) => {
-      const data = d.data() as Omit<ChatDoc, "id"> & { archivedAt?: unknown };
-      return {
-        id: d.id,
-        ...data,
-        archived: Boolean(data.archived),
-        createdAt: toMillis(data.createdAt),
-        updatedAt: toMillis(data.updatedAt),
-        archivedAt: data.archivedAt ? toMillis(data.archivedAt) : undefined,
-      };
-    });
-    onUpdate(chats);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const chats = snapshot.docs
+        .map((d) => {
+          const data = d.data() as Omit<ChatDoc, "id"> & {
+            archivedAt?: unknown;
+          };
+          return {
+            id: d.id,
+            ...data,
+            archived: Boolean(data.archived),
+            createdAt: toMillis(data.createdAt),
+            updatedAt: toMillis(data.updatedAt),
+            archivedAt: data.archivedAt ? toMillis(data.archivedAt) : undefined,
+          };
+        })
+        .sort((a, b) => b.updatedAt - a.updatedAt);
+      onUpdate(chats);
+    },
+    (error) => {
+      console.error("[firestore] watchChats failed:", error);
+    }
+  );
 }
 
 export async function renameChat(chatId: string, title: string) {
