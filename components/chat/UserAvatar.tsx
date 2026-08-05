@@ -27,7 +27,7 @@ export function UserAvatar() {
         <button
           type="button"
           aria-label="User menu"
-          className="cursor-pointer rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[#7C3AED]"
+          className="cursor-pointer rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-white"
         >
           <Avatar className="ring-2 ring-white/10">
             <AvatarImage
@@ -57,14 +57,14 @@ export function UserAvatar() {
           <DropdownMenuPrimitive.Separator className="my-1.5 h-px bg-white/10" />
           <DropdownMenuPrimitive.Item
             onSelect={() => router.push("/settings")}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white outline-none select-none data-[highlighted]:bg-[#7C3AED]/20"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white outline-none select-none data-[highlighted]:bg-white/15"
           >
             <Settings className="size-4" />
             Settings
           </DropdownMenuPrimitive.Item>
           <DropdownMenuPrimitive.Item
             onSelect={() => router.push("/settings")}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white outline-none select-none data-[highlighted]:bg-[#7C3AED]/20"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white outline-none select-none data-[highlighted]:bg-white/15"
           >
             <Database className="size-4" />
             Memory Dashboard

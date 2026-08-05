@@ -128,7 +128,7 @@ export function ChatInput({
           {files.map((file, index) => (
             <span
               key={`${file.name}-${index}`}
-              className="flex items-center gap-1.5 rounded-full border border-[#7C3AED]/40 bg-[#7C3AED]/15 px-3 py-1 text-xs text-[#C4B5FD] backdrop-blur-xl"
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur-xl"
             >
               <span className="max-w-40 truncate">{file.name}</span>
               <button
@@ -137,7 +137,7 @@ export function ChatInput({
                 onClick={() =>
                   setFiles((prev) => prev.filter((_, i) => i !== index))
                 }
-                className="cursor-pointer text-[#C4B5FD]/70 hover:text-white"
+                className="cursor-pointer text-white/60 hover:text-white"
               >
                 <X className="size-3" />
               </button>
@@ -146,7 +146,7 @@ export function ChatInput({
         </div>
       ) : null}
 
-      <div className="flex items-end gap-1 rounded-full border border-white/10 bg-[#1A1A1A]/70 py-1.5 pr-1.5 pl-1.5 backdrop-blur-xl transition-colors focus-within:border-[#7C3AED]/60 sm:gap-1.5 sm:pl-2">
+      <div className="flex items-end gap-1 rounded-full border border-white/10 bg-[#1A1A1A]/70 py-1.5 pr-1.5 pl-1.5 backdrop-blur-xl transition-colors focus-within:border-white/30 sm:gap-1.5 sm:pl-2">
         <button
           type="button"
           aria-label="Attach file"
@@ -196,7 +196,7 @@ export function ChatInput({
           className={cn(
             "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-all",
             canSend
-              ? "bg-[#7C3AED] text-white shadow-[0_0_18px_rgba(124,58,237,0.5)] hover:bg-[#6D28D9]"
+              ? "bg-white text-[#0A0A0A] shadow-[0_0_18px_rgba(255,255,255,0.35)] hover:bg-white/90"
               : "bg-white/10 text-[#A1A1A1] disabled:pointer-events-none"
           )}
         >

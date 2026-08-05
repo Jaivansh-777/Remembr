@@ -30,7 +30,7 @@ export function MemoryToggle({ value, onChange }: MemoryToggleProps) {
     >
       <span
         aria-hidden
-        className="absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] shadow-[0_0_16px_rgba(124,58,237,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        className="absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-white shadow-[0_0_16px_rgba(255,255,255,0.25)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         style={{ transform: `translateX(${activeIndex * 100}%)` }}
       />
       {MEMORY_MODES.map((mode) => {
@@ -46,7 +46,7 @@ export function MemoryToggle({ value, onChange }: MemoryToggleProps) {
             className={cn(
               "relative z-10 flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-200 sm:px-3",
               active
-                ? "text-white"
+                ? "text-[#0A0A0A]"
                 : "text-[#A1A1A1] hover:text-white"
             )}
           >

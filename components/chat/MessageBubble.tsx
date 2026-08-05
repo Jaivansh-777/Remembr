@@ -47,9 +47,9 @@ function AttachmentPreview({ attachment }: { attachment: Attachment }) {
       href={attachment.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-[#A1A1A1] backdrop-blur-xl transition-colors hover:border-[#7C3AED]/50 hover:text-white"
+      className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-[#A1A1A1] backdrop-blur-xl transition-colors hover:border-white/30 hover:text-white"
     >
-      <FileText className="size-4 shrink-0 text-[#C4B5FD]" />
+      <FileText className="size-4 shrink-0 text-[#A1A1A1]" />
       <span className="truncate">{attachment.name}</span>
       <span className="ml-auto shrink-0">{formatBytes(attachment.size)}</span>
     </a>
@@ -60,7 +60,7 @@ function RemembrAvatar({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#7C3AED]/90 shadow-[0_0_14px_rgba(124,58,237,0.35)]",
+        "flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 shadow-[0_0_14px_rgba(255,255,255,0.15)] backdrop-blur-xl",
         className
       )}
     >
@@ -93,7 +93,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     return (
       <div className="animate-message-in flex items-end justify-end gap-2">
         <div className="flex max-w-[90%] flex-col items-end sm:max-w-[80%]">
-          <div className="rounded-2xl rounded-br-md border border-white/10 bg-[#7C3AED] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-white shadow-[0_4px_20px_rgba(124,58,237,0.25)]">
+          <div className="rounded-2xl rounded-br-md border border-white/10 bg-white px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-[#0A0A0A] shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
             {hasAttachments ? (
               <div className="mb-2 flex flex-col gap-1.5">
                 {message.attachments?.map((attachment, index) => (
@@ -141,7 +141,7 @@ export function StreamingBubble({ content }: { content: string }) {
       <div className="flex max-w-[90%] flex-col sm:max-w-[80%]">
         <div className="rounded-2xl rounded-bl-md border border-white/10 bg-[#1A1A1A]/70 px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-white shadow-[0_4px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl">
           {content}
-          <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-[#7C3AED] align-middle" />
+          <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-white align-middle" />
         </div>
       </div>
     </div>

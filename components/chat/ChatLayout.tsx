@@ -41,6 +41,10 @@ export function ChatLayout() {
   const [mode, setMode] = useState<MemoryMode>("buddy");
   const [quota, setQuota] = useState<Quota>(() => getQuotaServer(null));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [minimized, setMinimized] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("remembr:sidebar-minimized") === "1";
+  });
 
   const activeChatIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -228,6 +232,22 @@ export function ChatLayout() {
     setSidebarOpen(false);
   }, []);
 
+  const handleToggleMinimize = useCallback(() => {
+    setMinimized((prev) => {
+      const next = !prev;
+      window.localStorage.setItem("remembr:sidebar-minimized", next ? "1" : "0");
+      return next;
+    });
+  }, []);
+
+  const handleToggleSidebar = useCallback(() => {
+    if (minimized) {
+      handleToggleMinimize();
+    } else {
+      setSidebarOpen((prev) => !prev);
+    }
+  }, [minimized, handleToggleMinimize]);
+
   const handleDeleteChat = useCallback(
     async (chat: ChatDoc) => {
       if (!window.confirm(`Delete "${chat.title}"? This cannot be undone.`)) {
@@ -284,7 +304,7 @@ export function ChatLayout() {
   if (loading || !user) {
     return (
       <div className="flex h-dvh items-center justify-center bg-[#0A0A0A] text-white">
-        <div className="size-8 animate-spin rounded-full border-2 border-[#7C3AED] border-t-transparent" />
+        <div className="size-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
     );
   }
@@ -295,15 +315,17 @@ export function ChatLayout() {
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-0"
       >
-        <div className="absolute -top-32 left-1/4 size-[26rem] rounded-full bg-[#7C3AED]/15 blur-3xl" />
-        <div className="absolute -right-32 bottom-0 size-96 rounded-full bg-[#4F46E5]/10 blur-3xl" />
+        <div className="absolute -top-32 left-1/4 size-[26rem] rounded-full bg-white/[0.05] blur-3xl" />
+        <div className="absolute -right-32 bottom-0 size-96 rounded-full bg-white/[0.04] blur-3xl" />
       </div>
 
       <Sidebar
         chats={chats}
         activeChatId={activeChatId}
         open={sidebarOpen}
+        minimized={minimized}
         onClose={() => setSidebarOpen(false)}
+        onToggleMinimize={handleToggleMinimize}
         onSelect={handleSelectChat}
         onNewChat={() => void handleNewChat()}
         onDelete={(chat) => void handleDeleteChat(chat)}
@@ -317,7 +339,8 @@ export function ChatLayout() {
           mode={mode}
           onModeChange={handleModeChange}
           onNewChat={() => void handleNewChat()}
-          onToggleSidebar={() => setSidebarOpen((open) => !open)}
+          onToggleSidebar={handleToggleSidebar}
+          sidebarMinimized={minimized}
           quota={quota}
         />
         <ChatView

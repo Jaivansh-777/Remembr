@@ -6,6 +6,7 @@ import {
   ArchiveRestore,
   ChevronDown,
   ChevronRight,
+  PanelLeftClose,
   Pencil,
   Plus,
   Trash2,
@@ -19,7 +20,9 @@ interface SidebarProps {
   chats: ChatDoc[];
   activeChatId: string | null;
   open: boolean;
+  minimized: boolean;
   onClose: () => void;
+  onToggleMinimize: () => void;
   onSelect: (chatId: string) => void;
   onNewChat: () => void;
   onDelete: (chat: ChatDoc) => void;
@@ -97,7 +100,7 @@ function ChatRow({
     <div
       className={cn(
         "group relative flex flex-col rounded-xl border border-transparent px-3 py-2.5 transition-colors",
-        active ? "border-[#7C3AED]/40 bg-[#7C3AED]/10" : "hover:bg-white/5"
+        active ? "border-white/20 bg-white/10" : "hover:bg-white/5"
       )}
     >
       <button
@@ -164,7 +167,9 @@ export function Sidebar({
   chats,
   activeChatId,
   open,
+  minimized,
   onClose,
+  onToggleMinimize,
   onSelect,
   onNewChat,
   onDelete,
@@ -213,7 +218,8 @@ export function Sidebar({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-[#0F0F0F]/90 backdrop-blur-2xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:static md:z-auto md:shrink-0 md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-[#0F0F0F]/90 backdrop-blur-2xl transition-[transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:static md:z-auto md:shrink-0 md:translate-x-0",
+          minimized && "md:w-0 md:overflow-hidden md:border-r-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -221,10 +227,18 @@ export function Sidebar({
           <button
             type="button"
             onClick={onNewChat}
-            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] px-3 py-2.5 text-sm font-medium text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] transition-opacity hover:opacity-90"
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-medium text-[#0A0A0A] shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-opacity hover:opacity-90"
           >
             <Plus className="size-4" />
             New Chat
+          </button>
+          <button
+            type="button"
+            onClick={onToggleMinimize}
+            aria-label="Minimize sidebar"
+            className="ml-2 hidden size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#A1A1A1] hover:bg-white/5 hover:text-white md:flex"
+          >
+            <PanelLeftClose className="size-4" />
           </button>
           <button
             type="button"
@@ -263,7 +277,7 @@ export function Sidebar({
                               if (event.key === "Enter") commitRename();
                               if (event.key === "Escape") setEditingId(null);
                             }}
-                            className="w-full rounded-md border border-[#7C3AED]/50 bg-[#1A1A1A] px-2 py-1 text-sm text-white focus:outline-none"
+                            className="w-full rounded-md border border-white/30 bg-[#1A1A1A] px-2 py-1 text-sm text-white focus:outline-none"
                           />
                         </div>
                       ) : (

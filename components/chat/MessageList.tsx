@@ -46,7 +46,7 @@ export function MessageList({
       className="chat-scrollbar flex min-h-full flex-1 flex-col overflow-y-auto"
     >
       {hasContent ? (
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-3 py-6 sm:px-6">
+        <div className="animate-drop-in mx-auto flex w-full max-w-3xl flex-col gap-4 px-3 py-6 sm:px-6">
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
