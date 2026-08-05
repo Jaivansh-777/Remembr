@@ -11,11 +11,12 @@ import type { Attachment, ChatDoc, ChatMessage, MemoryMode } from "@/lib/chat";
 import {
   addMemories,
   addMessage,
+  archiveChat,
   createChat,
   deleteChat,
   getMemoryContext,
-  incrementMessageCount,
   renameChat,
+  restoreChat,
   setMemoryMode,
   touchChatTitle,
   watchChats,
@@ -186,8 +187,15 @@ export function ChatLayout() {
               console.error("[chat-layout] save assistant failed:", error);
             }
           }
-          const used = await incrementMessageCount(user.uid);
-          setQuota((prev) => ({ ...prev, used }));
+          setQuota((prev) => {
+            if (prev.limit === Infinity) return prev;
+            const used = prev.used + 1;
+            return {
+              ...prev,
+              used,
+              remaining: Math.max(0, prev.limit - used),
+            };
+          });
         }
       } finally {
         sendingRef.current = false;
@@ -225,14 +233,41 @@ export function ChatLayout() {
       if (!window.confirm(`Delete "${chat.title}"? This cannot be undone.`)) {
         return;
       }
-      await deleteChat(chat.id);
-      if (activeChatIdRef.current === chat.id) {
-        setActiveChatId(null);
-        setMessages([]);
+      try {
+        await deleteChat(chat.id);
+        if (activeChatIdRef.current === chat.id) {
+          setActiveChatId(null);
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error("[chat-layout] delete failed:", error);
+        toast.error("Failed to delete chat. Please try again.");
       }
     },
     []
   );
+
+  const handleArchiveChat = useCallback(async (chat: ChatDoc) => {
+    try {
+      await archiveChat(chat.id);
+      if (activeChatIdRef.current === chat.id) {
+        setActiveChatId(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("[chat-layout] archive failed:", error);
+      toast.error("Failed to archive chat. Please try again.");
+    }
+  }, []);
+
+  const handleRestoreChat = useCallback(async (chat: ChatDoc) => {
+    try {
+      await restoreChat(chat.id);
+    } catch (error) {
+      console.error("[chat-layout] restore failed:", error);
+      toast.error("Failed to restore chat. Please try again.");
+    }
+  }, []);
 
   const handleRename = useCallback(async (chatId: string, title: string) => {
     await renameChat(chatId, title);
@@ -273,6 +308,8 @@ export function ChatLayout() {
         onNewChat={() => void handleNewChat()}
         onDelete={(chat) => void handleDeleteChat(chat)}
         onRename={(chatId, title) => void handleRename(chatId, title)}
+        onArchive={(chat) => void handleArchiveChat(chat)}
+        onRestore={(chat) => void handleRestoreChat(chat)}
       />
 
       <div className={cn("relative flex min-w-0 flex-1 flex-col")}>

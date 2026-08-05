@@ -30,15 +30,15 @@ export const PROVIDERS: ProviderConfig[] = [
     stream: streamOpenRouter,
   },
   {
-    name: "openrouter-mistral",
+    name: "openrouter-llama",
     envKey: "OPENROUTER_API_KEY",
-    model: "mistralai/mistral-small-3.1-24b-instruct:free",
+    model: "meta-llama/llama-3.3-70b-instruct:free",
     stream: streamOpenRouter,
   },
   {
-    name: "openrouter-deepseek",
+    name: "openrouter-auto",
     envKey: "OPENROUTER_API_KEY",
-    model: "deepseek/deepseek-chat:free",
+    model: "openrouter/free",
     stream: streamOpenRouter,
   },
 ];

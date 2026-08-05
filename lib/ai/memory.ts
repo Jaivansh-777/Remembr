@@ -14,6 +14,43 @@ export interface ExtractedMemory {
   content: string;
 }
 
+/** Phrases that ask Remembr to *recall* something (never trigger storage). */
+const RECALL_PATTERNS = [
+  /\bdo you remember\b/i,
+  /\bdid you remember\b/i,
+  /\bdo you recall\b/i,
+  /\bdo you know\b/i,
+  /\byou remember\b/i,
+  /\b(?:i|we) (?:don'?t|do not|can'?t|cannot|won'?t) remember\b/i,
+  /\bwhat.*(?:remember|forgot)\b/i,
+];
+
+/** Phrases that explicitly ask Remembr to *store* a memory. */
+const STORE_PATTERNS = [
+  /\bremember\b/i,
+  /\b(?:don'?t|do not|never) (?:forget|lose)\b/i,
+  /\bkeep (?:this|that )?in mind\b/i,
+  /\bnote (?:this|that|it )?down\b/i,
+  /\bsave (?:this|that|it)\b/i,
+  /\bwrite (?:this|that|it) down\b/i,
+  /\btake (?:a )?note\b/i,
+  /\bstore this\b/i,
+  /\bmark (?:this|that) down\b/i,
+];
+
+/**
+ * Detects whether a user message explicitly asks Remembr to remember
+ * something. Memories are only ever stored when this returns true.
+ */
+export function shouldStoreMemories(message: string): boolean {
+  const text = message.trim();
+  if (!text) return false;
+  for (const pattern of RECALL_PATTERNS) {
+    if (pattern.test(text)) return false;
+  }
+  return STORE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
 const EXTRACTION_PROMPT = `Extract 1-3 key memories from this exchange that will be useful for future conversations.
 Focus on: facts the user shared, preferences, ongoing projects, or emotional tone.
 Return ONLY a JSON array, no other text, in this exact shape:

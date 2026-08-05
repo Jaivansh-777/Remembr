@@ -35,11 +35,11 @@ export const MEMORY_MODE_LABEL: Record<MemoryMode, string> = {
 };
 
 export const SUGGESTIONS = [
-  "Remember my project context",
-  "What was our last conversation?",
+  "Remember that I prefer clear, concise answers",
+  "Don't forget my project deadline is next Friday",
+  "Keep in mind I'm learning TypeScript",
+  "What do you remember about me?",
   "Help me debug this code",
-  "Summarize my uploaded documents",
-  "Find that thing I mentioned yesterday",
 ];
 
 export interface Attachment {
@@ -65,6 +65,8 @@ export interface ChatDoc {
   messageCount: number;
   createdAt: number;
   updatedAt: number;
+  archived: boolean;
+  archivedAt?: number;
 }
 
 export function createId(): string {

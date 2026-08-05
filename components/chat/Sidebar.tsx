@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 
 import type { ChatDoc } from "@/lib/chat";
 import { cn } from "@/lib/utils";
@@ -15,6 +24,13 @@ interface SidebarProps {
   onNewChat: () => void;
   onDelete: (chat: ChatDoc) => void;
   onRename: (chatId: string, title: string) => void;
+  onArchive: (chat: ChatDoc) => void;
+  onRestore: (chat: ChatDoc) => void;
+}
+
+interface ChatGroup {
+  label: string;
+  chats: ChatDoc[];
 }
 
 function relativeTime(timestamp: number): string {
@@ -30,6 +46,120 @@ function relativeTime(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString();
 }
 
+function startOfToday(): number {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+}
+
+function groupChats(chats: ChatDoc[]): ChatGroup[] {
+  const today = startOfToday();
+  const day = 86_400_000;
+  const buckets: ChatGroup[] = [
+    { label: "Today", chats: [] },
+    { label: "Yesterday", chats: [] },
+    { label: "Previous 7 days", chats: [] },
+    { label: "Previous 30 days", chats: [] },
+    { label: "Older", chats: [] },
+  ];
+  for (const chat of chats) {
+    const ts = chat.updatedAt;
+    if (ts >= today) buckets[0].chats.push(chat);
+    else if (ts >= today - day) buckets[1].chats.push(chat);
+    else if (ts >= today - 7 * day) buckets[2].chats.push(chat);
+    else if (ts >= today - 30 * day) buckets[3].chats.push(chat);
+    else buckets[4].chats.push(chat);
+  }
+  return buckets.filter((group) => group.chats.length > 0);
+}
+
+interface ChatRowProps {
+  chat: ChatDoc;
+  active: boolean;
+  archived?: boolean;
+  onSelect: () => void;
+  onRename: (chat: ChatDoc) => void;
+  onArchive: (chat: ChatDoc) => void;
+  onRestore: (chat: ChatDoc) => void;
+  onDelete: (chat: ChatDoc) => void;
+}
+
+function ChatRow({
+  chat,
+  active,
+  archived,
+  onSelect,
+  onRename,
+  onArchive,
+  onRestore,
+  onDelete,
+}: ChatRowProps) {
+  return (
+    <div
+      className={cn(
+        "group relative flex flex-col rounded-xl border border-transparent px-3 py-2.5 transition-colors",
+        active ? "border-[#7C3AED]/40 bg-[#7C3AED]/10" : "hover:bg-white/5"
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        onDoubleClick={() => onRename(chat)}
+        className="cursor-pointer text-left"
+      >
+        <p className="truncate text-sm font-medium text-white">
+          {chat.title}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-[#A1A1A1]">
+          {chat.lastMessage || "Empty conversation"}
+        </p>
+        <p className="mt-0.5 text-[10px] text-[#6B6B6B]">
+          {relativeTime(chat.updatedAt)}
+        </p>
+      </button>
+
+      <div className="absolute top-2 right-2 hidden gap-0.5 group-hover:flex">
+        {!archived ? (
+          <>
+            <button
+              type="button"
+              aria-label="Rename chat"
+              onClick={() => onRename(chat)}
+              className="flex size-7 cursor-pointer items-center justify-center rounded-md bg-[#1A1A1A] text-[#A1A1A1] hover:text-white"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Archive chat"
+              onClick={() => onArchive(chat)}
+              className="flex size-7 cursor-pointer items-center justify-center rounded-md bg-[#1A1A1A] text-[#A1A1A1] hover:text-white"
+            >
+              <Archive className="size-3.5" />
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            aria-label="Restore chat"
+            onClick={() => onRestore(chat)}
+            className="flex size-7 cursor-pointer items-center justify-center rounded-md bg-[#1A1A1A] text-[#A1A1A1] hover:text-white"
+          >
+            <ArchiveRestore className="size-3.5" />
+          </button>
+        )}
+        <button
+          type="button"
+          aria-label="Delete chat"
+          onClick={() => onDelete(chat)}
+          className="flex size-7 cursor-pointer items-center justify-center rounded-md bg-[#1A1A1A] text-red-400 hover:bg-red-500/15 hover:text-red-300"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Sidebar({
   chats,
   activeChatId,
@@ -39,9 +169,16 @@ export function Sidebar({
   onNewChat,
   onDelete,
   onRename,
+  onArchive,
+  onRestore,
 }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [archivedOpen, setArchivedOpen] = useState(false);
+
+  const activeChats = chats.filter((chat) => !chat.archived);
+  const archivedChats = chats.filter((chat) => chat.archived);
+  const groups = groupChats(activeChats);
 
   const handleClose = () => {
     setEditingId(null);
@@ -58,6 +195,11 @@ export function Sidebar({
       onRename(editingId, draft.trim());
     }
     setEditingId(null);
+  };
+
+  const select = (id: string) => {
+    onSelect(id);
+    handleClose();
   };
 
   return (
@@ -95,83 +237,88 @@ export function Sidebar({
         </div>
 
         <div className="chat-scrollbar flex-1 overflow-y-auto p-2">
-          {chats.length === 0 ? (
+          {groups.length === 0 && archivedChats.length === 0 ? (
             <div className="px-3 py-8 text-center text-sm text-[#A1A1A1]">
               No conversations yet.
               <br />
               Start one below.
             </div>
           ) : (
-            <div className="flex flex-col gap-1">
-              {chats.map((chat) => {
-                const active = chat.id === activeChatId;
-                return (
-                  <div
-                    key={chat.id}
-                    className={cn(
-                      "group relative flex flex-col rounded-xl border border-transparent px-3 py-2.5 transition-colors",
-                      active
-                        ? "border-[#7C3AED]/40 bg-[#7C3AED]/10"
-                        : "hover:bg-white/5"
+            <div className="flex flex-col gap-4">
+              {groups.map((group) => (
+                <div key={group.label}>
+                  <p className="px-3 pt-1 pb-1 text-[10px] font-semibold tracking-wider text-[#6B6B6B] uppercase">
+                    {group.label}
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {group.chats.map((chat) =>
+                      editingId === chat.id ? (
+                        <div key={chat.id} className="px-1">
+                          <input
+                            autoFocus
+                            value={draft}
+                            onChange={(event) => setDraft(event.target.value)}
+                            onBlur={commitRename}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") commitRename();
+                              if (event.key === "Escape") setEditingId(null);
+                            }}
+                            className="w-full rounded-md border border-[#7C3AED]/50 bg-[#1A1A1A] px-2 py-1 text-sm text-white focus:outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <ChatRow
+                          key={chat.id}
+                          chat={chat}
+                          active={chat.id === activeChatId}
+                          onSelect={() => select(chat.id)}
+                          onRename={startRename}
+                          onArchive={onArchive}
+                          onRestore={onRestore}
+                          onDelete={onDelete}
+                        />
+                      )
                     )}
-                  >
-                    {editingId === chat.id ? (
-                      <input
-                        autoFocus
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        onBlur={commitRename}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") commitRename();
-                          if (event.key === "Escape") setEditingId(null);
-                        }}
-                        className="w-full rounded-md border border-[#7C3AED]/50 bg-[#1A1A1A] px-2 py-1 text-sm text-white focus:outline-none"
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelect(chat.id);
-                          handleClose();
-                        }}
-                        onDoubleClick={() => startRename(chat)}
-                        className="cursor-pointer text-left"
-                      >
-                        <p className="truncate text-sm font-medium text-white">
-                          {chat.title}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-[#A1A1A1]">
-                          {chat.lastMessage || "Empty conversation"}
-                        </p>
-                        <p className="mt-0.5 text-[10px] text-[#6B6B6B]">
-                          {relativeTime(chat.updatedAt)}
-                        </p>
-                      </button>
-                    )}
-
-                    {editingId !== chat.id ? (
-                      <div className="absolute top-2 right-2 hidden gap-0.5 group-hover:flex">
-                        <button
-                          type="button"
-                          aria-label="Rename chat"
-                          onClick={() => startRename(chat)}
-                          className="flex size-7 cursor-pointer items-center justify-center rounded-md bg-[#1A1A1A] text-[#A1A1A1] hover:text-white"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Delete chat"
-                          onClick={() => onDelete(chat)}
-                          className="flex size-7 cursor-pointer items-center justify-center rounded-md bg-[#1A1A1A] text-red-400 hover:bg-red-500/15 hover:text-red-300"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </div>
-                    ) : null}
                   </div>
-                );
-              })}
+                </div>
+              ))}
+
+              {archivedChats.length > 0 ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setArchivedOpen((prev) => !prev)}
+                    className="flex w-full cursor-pointer items-center gap-1.5 px-3 py-1 text-[10px] font-semibold tracking-wider text-[#6B6B6B] uppercase hover:text-[#A1A1A1]"
+                  >
+                    {archivedOpen ? (
+                      <ChevronDown className="size-3" />
+                    ) : (
+                      <ChevronRight className="size-3" />
+                    )}
+                    Archived
+                    <span className="rounded-full bg-white/10 px-1.5 text-[10px] text-[#A1A1A1]">
+                      {archivedChats.length}
+                    </span>
+                  </button>
+                  {archivedOpen ? (
+                    <div className="flex flex-col gap-1 pt-1">
+                      {archivedChats.map((chat) => (
+                        <ChatRow
+                          key={chat.id}
+                          chat={chat}
+                          archived
+                          active={chat.id === activeChatId}
+                          onSelect={() => select(chat.id)}
+                          onRename={startRename}
+                          onArchive={onArchive}
+                          onRestore={onRestore}
+                          onDelete={onDelete}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           )}
         </div>

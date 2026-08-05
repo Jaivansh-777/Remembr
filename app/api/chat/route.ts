@@ -9,6 +9,7 @@ import {
 import {
   buildSystemPrompt,
   extractMemories,
+  shouldStoreMemories,
   type ExtractedMemory,
 } from "@/lib/ai/memory";
 import { hasConfiguredProvider, streamWithFallback } from "@/lib/ai/router";
@@ -129,12 +130,14 @@ export async function POST(request: NextRequest) {
         await incrementServerQuota(user.uid);
 
         let extracted: ExtractedMemory[] = [];
-        try {
-          extracted = await extractMemories(
-            `User: ${message}\n\nAssistant: ${fullResponse}`
-          );
-        } catch (error) {
-          console.error("[chat] memory extraction failed:", error);
+        if (shouldStoreMemories(message)) {
+          try {
+            extracted = await extractMemories(
+              `User: ${message}\n\nAssistant: ${fullResponse}`
+            );
+          } catch (error) {
+            console.error("[chat] memory extraction failed:", error);
+          }
         }
 
         let stored = false;
@@ -158,7 +161,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        send("memory", { memories: extracted, stored });
+        if (extracted.length > 0) {
+          send("memory", { memories: extracted, stored });
+        }
         send("done", { provider: currentProvider });
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {

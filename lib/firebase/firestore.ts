@@ -1,6 +1,7 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -28,6 +29,7 @@ export async function createChat(userId: string): Promise<ChatDoc> {
     title: "New chat",
     lastMessage: "",
     messageCount: 0,
+    archived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -37,6 +39,7 @@ export async function createChat(userId: string): Promise<ChatDoc> {
     title: "New chat",
     lastMessage: "",
     messageCount: 0,
+    archived: false,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -49,21 +52,40 @@ export function watchChats(
   const q = query(
     chatsCol(userId),
     orderBy("updatedAt", "desc"),
-    limit(50)
+    limit(200)
   );
   return onSnapshot(q, (snapshot) => {
-    const chats = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as Omit<ChatDoc, "id">),
-      createdAt: toMillis(d.data().createdAt),
-      updatedAt: toMillis(d.data().updatedAt),
-    }));
+    const chats = snapshot.docs.map((d) => {
+      const data = d.data() as Omit<ChatDoc, "id"> & { archivedAt?: unknown };
+      return {
+        id: d.id,
+        ...data,
+        archived: Boolean(data.archived),
+        createdAt: toMillis(data.createdAt),
+        updatedAt: toMillis(data.updatedAt),
+        archivedAt: data.archivedAt ? toMillis(data.archivedAt) : undefined,
+      };
+    });
     onUpdate(chats);
   });
 }
 
 export async function renameChat(chatId: string, title: string) {
   await updateDoc(doc(db, "chats", chatId), { title });
+}
+
+export async function archiveChat(chatId: string) {
+  await updateDoc(doc(db, "chats", chatId), {
+    archived: true,
+    archivedAt: serverTimestamp(),
+  });
+}
+
+export async function restoreChat(chatId: string) {
+  await updateDoc(doc(db, "chats", chatId), {
+    archived: false,
+    archivedAt: deleteField(),
+  });
 }
 
 export async function deleteChat(chatId: string) {
@@ -236,25 +258,6 @@ export async function setMemoryMode(userId: string, mode: string) {
     { memoryMode: mode, lastLogin: serverTimestamp() },
     { merge: true }
   );
-}
-
-export async function incrementMessageCount(userId: string) {
-  const ref = doc(db, "users", userId);
-  const snap = await getDoc(ref);
-  const data = snap.data();
-  const today = new Date().toISOString().slice(0, 10);
-  const lastReset = data?.lastResetDate as string | undefined;
-  const count = lastReset === today ? ((data?.messageCount as number) ?? 0) : 0;
-  await setDoc(
-    ref,
-    {
-      messageCount: count + 1,
-      lastResetDate: today,
-      lastLogin: serverTimestamp(),
-    },
-    { merge: true }
-  );
-  return count + 1;
 }
 
 function toMillis(value: unknown): number {

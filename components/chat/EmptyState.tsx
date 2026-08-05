@@ -23,7 +23,7 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
           🧠 Remembr
         </h1>
         <p className="text-sm text-[#A1A1A1]">
-          Your AI remembers everything. Start a conversation.
+          Ask it to remember something — it only keeps what you tell it to.
         </p>
       </div>
 

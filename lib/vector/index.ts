@@ -82,10 +82,15 @@ export class MemoryVectorStore {
     const embedding = await embedText(memory.content);
     const db = getAdminDb();
     if (db) {
-      await db.collection("memories").doc(memory.id).set({
-        ...memory,
-        embedding,
-      });
+      await db
+        .collection("memories")
+        .doc(memory.userId)
+        .collection("items")
+        .doc(memory.id)
+        .set({
+          ...memory,
+          embedding,
+        });
     } else {
       this.memory.set(memory.id, {
         id: memory.id,
@@ -109,7 +114,8 @@ export class MemoryVectorStore {
     if (db) {
       const snapshot = await db
         .collection("memories")
-        .where("userId", "==", userId)
+        .doc(userId)
+        .collection("items")
         .limit(200)
         .get();
       const results = snapshot.docs
