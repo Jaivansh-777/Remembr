@@ -28,11 +28,11 @@ export async function POST(request: Request) {
   }
 
   const file = form.get("file");
-  if (!(file instanceof File)) {
+  if (!(file instanceof Blob)) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  const name = file.name || "upload";
+  const name = file instanceof File ? file.name : "upload";
   if (!isSupportedFileName(name)) {
     return NextResponse.json({ error: "Unsupported file type" }, { status: 415 });
   }
@@ -67,10 +67,20 @@ export async function POST(request: Request) {
 
   let processed;
   try {
-    processed = await processFileBuffer(buffer, name, file.type);
+    processed = await Promise.race([
+      processFileBuffer(buffer, name, file.type),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Processing took too long. Please try again.")),
+          105_000
+        )
+      ),
+    ]);
   } catch (error) {
     console.error("[api/files/upload] processing failed:", error);
-    return NextResponse.json({ error: "Could not process file" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Could not process file";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   const expiresAt = tierConfig.expiryDays

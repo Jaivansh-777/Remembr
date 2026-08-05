@@ -9,16 +9,30 @@ import type { FileMetadata } from "@/lib/file-types";
 export async function processPdf(
   buffer: Buffer
 ): Promise<{ text: string; metadata: FileMetadata }> {
-  const parser = new PDFParse(buffer);
+  const data = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const parser = new PDFParse(data);
   try {
-    const result = await parser.getText();
+    const result = await Promise.race([
+      parser.getText(),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("PDF parsing timed out")),
+          60_000
+        )
+      ),
+    ]);
     const text = typeof result.text === "string" ? result.text : "";
     const pages = typeof result.total === "number" ? result.total : 0;
 
     let title: string | undefined;
     let author: string | undefined;
     try {
-      const info = await parser.getInfo();
+      const info = await Promise.race([
+        parser.getInfo(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("PDF metadata timed out")), 30_000)
+        ),
+      ]);
       if (typeof info.info?.Title === "string" && info.info.Title) {
         title = info.info.Title;
       }
@@ -37,10 +51,8 @@ export async function processPdf(
     console.warn("[file-processing] pdf parse failed:", error);
     return { text: "", metadata: { warning: "Could not extract text (may be a scanned PDF)." } };
   } finally {
-    try {
-      await parser.destroy();
-    } catch {
-      /* ignore */
-    }
+    setTimeout(() => {
+      parser.destroy().catch(() => undefined);
+    }, 0);
   }
 }
