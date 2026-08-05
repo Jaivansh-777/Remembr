@@ -1,8 +1,20 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { getAdminDb } from "@/lib/firebase/admin";
+import {
+  FieldValue as AdminFieldValue,
+  Timestamp,
+} from "firebase-admin/firestore";
 
 const EMBED_MODEL = "text-embedding-004";
+
+function adminIncrement() {
+  return AdminFieldValue.increment(1);
+}
+
+function adminTimestamp() {
+  return Timestamp.now();
+}
 
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
@@ -55,9 +67,11 @@ export async function embedText(text: string): Promise<number[]> {
 export interface StoredMemoryVector {
   id: string;
   userId: string;
+  userName?: string;
   content: string;
   type: string;
   chatId?: string;
+  projectId?: string;
   timestamp: number;
   embedding: number[];
 }
@@ -82,15 +96,31 @@ export class MemoryVectorStore {
     const embedding = await embedText(memory.content);
     const db = getAdminDb();
     if (db) {
-      await db
-        .collection("memories")
-        .doc(memory.userId)
-        .collection("items")
-        .doc(memory.id)
-        .set({
-          ...memory,
-          embedding,
-        });
+      const ref = memory.projectId
+        ? db
+            .collection("projects")
+            .doc(memory.projectId)
+            .collection("memories")
+            .doc(memory.id)
+        : db
+            .collection("memories")
+            .doc(memory.userId)
+            .collection("items")
+            .doc(memory.id);
+      await ref.set({
+        ...memory,
+        shared: Boolean(memory.projectId),
+        embedding,
+      });
+      if (memory.projectId) {
+        await db
+          .collection("projects")
+          .doc(memory.projectId)
+          .update({
+            memoryCount: adminIncrement(),
+            updatedAt: adminTimestamp(),
+          });
+      }
     } else {
       this.memory.set(memory.id, {
         id: memory.id,
@@ -98,6 +128,7 @@ export class MemoryVectorStore {
         content: memory.content,
         type: memory.type,
         chatId: memory.chatId,
+        projectId: memory.projectId,
         timestamp: memory.timestamp,
         embedding,
       });

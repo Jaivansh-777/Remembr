@@ -10,6 +10,9 @@ export interface ChatRequest {
   userId: string;
   memoryMode: string;
   chatId?: string;
+  projectId?: string;
+  projectName?: string;
+  userName?: string;
   attachments?: Attachment[];
   memories?: { content: string; type?: string }[];
   history?: { role: "user" | "assistant"; content: string }[];

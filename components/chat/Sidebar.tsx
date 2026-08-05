@@ -6,6 +6,7 @@ import {
   ArchiveRestore,
   ChevronDown,
   ChevronRight,
+  MessageSquare,
   PanelLeftClose,
   Pencil,
   Plus,
@@ -13,7 +14,9 @@ import {
   X,
 } from "lucide-react";
 
+import { ProjectList } from "@/components/projects/ProjectList";
 import type { ChatDoc } from "@/lib/chat";
+import type { ProjectDoc } from "@/lib/projects";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -21,6 +24,11 @@ interface SidebarProps {
   activeChatId: string | null;
   open: boolean;
   minimized: boolean;
+  projects: ProjectDoc[];
+  activeProjectId: string | null;
+  onSelectProject: (projectId: string) => void;
+  onCreateProject: () => void;
+  onHome?: () => void;
   onClose: () => void;
   onToggleMinimize: () => void;
   onSelect: (chatId: string) => void;
@@ -168,6 +176,11 @@ export function Sidebar({
   activeChatId,
   open,
   minimized,
+  projects,
+  activeProjectId,
+  onSelectProject,
+  onCreateProject,
+  onHome,
   onClose,
   onToggleMinimize,
   onSelect,
@@ -251,6 +264,26 @@ export function Sidebar({
         </div>
 
         <div className="chat-scrollbar flex-1 overflow-y-auto p-2">
+          <div className="flex flex-col gap-4">
+            {onHome ? (
+              <button
+                type="button"
+                onClick={onHome}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              >
+                <MessageSquare className="size-4" />
+                Personal Chat
+              </button>
+            ) : null}
+
+            <ProjectList
+              projects={projects}
+              activeProjectId={activeProjectId}
+              onSelect={onSelectProject}
+              onCreateProject={onCreateProject}
+            />
+          </div>
+
           {groups.length === 0 && archivedChats.length === 0 ? (
             <div className="px-3 py-8 text-center text-sm text-[#A1A1A1]">
               No conversations yet.

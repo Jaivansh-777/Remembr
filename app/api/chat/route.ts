@@ -24,6 +24,9 @@ interface ChatRequestBody {
   userId: string;
   memoryMode?: string;
   chatId?: string;
+  projectId?: string;
+  projectName?: string;
+  userName?: string;
   attachments?: string[];
   memories?: { content: string; type?: string }[];
   history?: { role: "user" | "assistant"; content: string }[];
@@ -86,6 +89,8 @@ export async function POST(request: NextRequest) {
   const system = buildSystemPrompt({
     mode: body.memoryMode ?? "buddy",
     memories: body.memories ?? [],
+    scope: body.projectId ? "team" : "personal",
+    projectName: body.projectName,
   });
 
   const history = (body.history ?? [])
@@ -148,9 +153,11 @@ export async function POST(request: NextRequest) {
                 vectorStore.add({
                   id: createId(),
                   userId: user.uid,
+                  userName: body.userName,
                   content: memory.content,
                   type: memory.type,
                   chatId: body.chatId,
+                  projectId: body.projectId,
                   timestamp: Date.now(),
                 })
               )

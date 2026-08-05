@@ -117,7 +117,7 @@ export function MemoryDashboard() {
               <div className="min-w-0 flex-1">
                 <p className="leading-relaxed text-white">{memory.content}</p>
                 <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[#A1A1A1]">
-                  <span className="rounded-full border border-[#7C3AED]/40 bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-medium text-[#C4B5FD]">
+                  <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/90">
                     {MEMORY_TYPE_LABEL[memory.type]}
                   </span>
                   <span>{relativeTime(memory.timestamp)}</span>

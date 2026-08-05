@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatView } from "@/components/chat/ChatView";
 import { Sidebar } from "@/components/chat/Sidebar";
+import { CreateProject } from "@/components/projects/CreateProject";
+import { InviteMembers } from "@/components/projects/InviteMembers";
 import { streamChat } from "@/lib/api";
 import type { Attachment, ChatDoc, ChatMessage, MemoryMode } from "@/lib/chat";
 import {
@@ -15,14 +18,18 @@ import {
   createChat,
   deleteChat,
   getMemoryContext,
+  getTeamMemoryContext,
   renameChat,
   restoreChat,
   setMemoryMode,
   touchChatTitle,
   watchChats,
   watchMessages,
+  watchProject,
+  watchProjects,
   watchUser,
 } from "@/lib/firebase/firestore";
+import type { ProjectDoc } from "@/lib/projects";
 import {
   getQuota as getQuotaServer,
   type Quota,
@@ -31,8 +38,13 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
-export function ChatLayout() {
+interface ChatLayoutProps {
+  projectId?: string;
+}
+
+export function ChatLayout({ projectId }: ChatLayoutProps) {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const [chats, setChats] = useState<ChatDoc[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,11 +57,16 @@ export function ChatLayout() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("remembr:sidebar-minimized") === "1";
   });
+  const [projects, setProjects] = useState<ProjectDoc[]>([]);
+  const [project, setProject] = useState<ProjectDoc | null>(null);
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [invitingMembers, setInvitingMembers] = useState(false);
 
   const activeChatIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   const modeRef = useRef<MemoryMode>("buddy");
   const sendingRef = useRef(false);
+  const projectRef = useRef<ProjectDoc | null>(null);
 
   useEffect(() => {
     activeChatIdRef.current = activeChatId;
@@ -64,10 +81,37 @@ export function ChatLayout() {
   }, [mode]);
 
   useEffect(() => {
+    projectRef.current = project;
+  }, [project]);
+
+  useEffect(() => {
     if (!user) return;
-    const unsub = watchChats(user.uid, setChats);
+    const unsub = watchProjects(user.uid, setProjects);
     return unsub;
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (!projectId) return;
+    const unsub = watchProject(projectId, (doc) => {
+      if (!doc) {
+        router.replace("/chat");
+        return;
+      }
+      if (!doc.members.includes(user.uid) && doc.ownerId !== user.uid) {
+        router.replace("/chat");
+        return;
+      }
+      setProject(doc);
+    });
+    return unsub;
+  }, [user, projectId, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = watchChats(user.uid, setChats, projectId);
+    return unsub;
+  }, [user, projectId]);
 
   useEffect(() => {
     if (!user) return;
@@ -96,11 +140,18 @@ export function ChatLayout() {
   const ensureChat = useCallback(async (): Promise<string> => {
     if (activeChatIdRef.current) return activeChatIdRef.current;
     if (!user) throw new Error("Not authenticated");
-    const chat = await createChat(user.uid);
+    const opts =
+      projectId && projectRef.current
+        ? {
+            projectId,
+            title: `Project ${projectRef.current.name} — Chat ${new Date().toLocaleDateString()}`,
+          }
+        : undefined;
+    const chat = await createChat(user.uid, opts);
     setActiveChatId(chat.id);
     setSidebarOpen(false);
     return chat.id;
-  }, [user]);
+  }, [user, projectId]);
 
   const handleSend = useCallback(
     async (text: string, attachments: Attachment[]) => {
@@ -123,7 +174,10 @@ export function ChatLayout() {
 
         let memories: { content: string; type: string }[] = [];
         try {
-          const ctx = await getMemoryContext(user.uid, text);
+          const currentProject = projectRef.current;
+          const ctx = currentProject
+            ? await getTeamMemoryContext(user.uid, currentProject.id, text)
+            : await getMemoryContext(user.uid, text);
           memories = ctx.map((m) => ({ content: m.content, type: m.type }));
         } catch (error) {
           console.error("[chat-layout] memory context failed:", error);
@@ -137,6 +191,9 @@ export function ChatLayout() {
               message: text,
               userId: user.uid,
               chatId,
+              projectId: projectRef.current?.id,
+              projectName: projectRef.current?.name,
+              userName: user.displayName ?? "Team member",
               memoryMode: modeRef.current,
               attachments,
               memories,
@@ -160,7 +217,11 @@ export function ChatLayout() {
                       confidence: 1,
                       chatId,
                     })),
-                    chatId
+                    chatId,
+                    {
+                      projectId: projectRef.current?.id,
+                      userName: user.displayName ?? "Team member",
+                    }
                   );
                 } catch (error) {
                   console.error("[chat-layout] store memories failed:", error);
@@ -221,13 +282,20 @@ export function ChatLayout() {
 
   const handleNewChat = useCallback(async () => {
     if (!user) return;
-    const chat = await createChat(user.uid);
+    const opts =
+      projectId && projectRef.current
+        ? {
+            projectId,
+            title: `Project ${projectRef.current.name} — Chat ${new Date().toLocaleDateString()}`,
+          }
+        : undefined;
+    const chat = await createChat(user.uid, opts);
     setActiveChatId(chat.id);
     setMessages([]);
     setStreaming(null);
     setThinking(false);
     setSidebarOpen(false);
-  }, [user]);
+  }, [user, projectId]);
 
   const handleSelectChat = useCallback((id: string) => {
     setActiveChatId(id);
@@ -235,6 +303,22 @@ export function ChatLayout() {
     setThinking(false);
     setSidebarOpen(false);
   }, []);
+
+  const handleSelectProject = useCallback(
+    (id: string) => {
+      setSidebarOpen(false);
+      router.push(`/projects/${id}`);
+    },
+    [router]
+  );
+
+  const handleCreatedProject = useCallback(
+    (created: ProjectDoc) => {
+      setCreatingProject(false);
+      router.push(`/projects/${created.id}`);
+    },
+    [router]
+  );
 
   const handleToggleMinimize = useCallback(() => {
     setMinimized((prev) => {
@@ -328,6 +412,11 @@ export function ChatLayout() {
         activeChatId={activeChatId}
         open={sidebarOpen}
         minimized={minimized}
+        projects={projects}
+        activeProjectId={projectId ?? null}
+        onSelectProject={handleSelectProject}
+        onCreateProject={() => setCreatingProject(true)}
+        onHome={projectId ? () => router.push("/chat") : undefined}
         onClose={() => setSidebarOpen(false)}
         onToggleMinimize={handleToggleMinimize}
         onSelect={handleSelectChat}
@@ -346,6 +435,8 @@ export function ChatLayout() {
           onToggleSidebar={handleToggleSidebar}
           sidebarMinimized={minimized}
           quota={quota}
+          project={project}
+          onOpenInvite={() => setInvitingMembers(true)}
         />
         <ChatView
           messages={activeChatId ? messages : []}
@@ -357,6 +448,18 @@ export function ChatLayout() {
           onPickSuggestion={(text) => void handleSend(text, [])}
         />
       </div>
+
+      <CreateProject
+        open={creatingProject}
+        onClose={() => setCreatingProject(false)}
+        onCreated={handleCreatedProject}
+      />
+      {invitingMembers && project ? (
+        <InviteMembers
+          project={project}
+          onClose={() => setInvitingMembers(false)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { completeOpenRouter } from "@/lib/ai/providers/openrouter";
 export type ExtractedMemoryType =
   | "fact"
   | "preference"
+  | "decision"
+  | "project_update"
   | "tone"
   | "project"
   | "attachment";
@@ -52,13 +54,23 @@ export function shouldStoreMemories(message: string): boolean {
 }
 
 const EXTRACTION_PROMPT = `Extract 1-3 key memories from this exchange that will be useful for future conversations.
-Focus on: facts the user shared, preferences, ongoing projects, or emotional tone.
+Focus on: facts the user shared, preferences, decisions made, or ongoing projects.
 Return ONLY a JSON array, no other text, in this exact shape:
-[{"type":"fact|preference|tone|project|attachment","content":"..."}]`;
+[{"type":"fact|preference|decision|project_update|tone|project|attachment","content":"..."}]`;
 
 function normalizeType(type: string | null | undefined): ExtractedMemoryType {
   const value = String(type ?? "").toLowerCase();
-  if (["fact", "preference", "tone", "project", "attachment"].includes(value)) {
+  if (
+    [
+      "fact",
+      "preference",
+      "decision",
+      "project_update",
+      "tone",
+      "project",
+      "attachment",
+    ].includes(value)
+  ) {
     return value as ExtractedMemoryType;
   }
   return "fact";
@@ -164,17 +176,23 @@ export interface MemoryPromptInput {
   mode: string;
   memories: { content: string; type?: string }[];
   recentContext?: string[];
+  scope?: "personal" | "team";
+  projectName?: string;
 }
 
 /** Builds the system prompt that injects recalled memories. */
 export function buildSystemPrompt(input: MemoryPromptInput): string {
   const mode = input.mode || "buddy";
   const memories = input.memories ?? [];
+  const isTeam = input.scope === "team";
 
   let prompt = `You are Remembr, a memory-first AI assistant. You help users with their projects, code, documents, and ideas.`;
 
   if (memories.length > 0 && mode !== "goldfish") {
-    prompt += `\n\n[USER MEMORIES]\nHere are key facts about this user from previous conversations:\n${memories
+    const header = isTeam
+      ? `\n\n[TEAM MEMORIES]\nHere are shared memories${input.projectName ? ` for the project "${input.projectName}"` : ""} gathered from team conversations:\n`
+      : `\n\n[USER MEMORIES]\nHere are key facts about this user from previous conversations:\n`;
+    prompt += `${header}${memories
       .map((memory, index) => `${index + 1}. ${memory.content}`)
       .join("\n")}`;
   }
@@ -186,6 +204,10 @@ export function buildSystemPrompt(input: MemoryPromptInput): string {
   }
 
   prompt += `\n\n[INSTRUCTION]\nUse these memories to provide personalized, contextual responses. Never contradict these facts unless the user explicitly changes them.`;
+
+  if (isTeam) {
+    prompt += `\nYou are operating in a shared team workspace${input.projectName ? ` (${input.projectName})` : ""}. Treat team memories as shared knowledge owned by the whole team. When recalling, reference that the team decided or shared this context.`;
+  }
 
   if (mode === "goldfish") {
     prompt += `\nThis session is in Goldfish mode: treat it as a fresh session with no prior memory.`;
