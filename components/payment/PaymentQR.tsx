@@ -1,10 +1,9 @@
 "use client";
 
 import { Check, Copy, Smartphone } from "lucide-react";
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+import { useState } from "react";
 
-import { CURRENCY, upiDeepLink } from "@/lib/validations/payment";
+import { CURRENCY } from "@/lib/validations/payment";
 import { cn } from "@/lib/utils";
 
 interface PaymentQRProps {
@@ -12,6 +11,7 @@ interface PaymentQRProps {
   amount: number;
   note: string;
   payeeName?: string;
+  qrImage?: string;
   className?: string;
   onPaid?: () => void;
 }
@@ -21,31 +21,12 @@ export function PaymentQR({
   amount,
   note,
   payeeName = "Remembr",
+  qrImage = "/upi-qr.png",
   className,
   onPaid,
 }: PaymentQRProps) {
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const uri = upiDeepLink({ upiId, amount, note, name: payeeName });
-    let cancelled = false;
-    QRCode.toDataURL(uri, {
-      width: 240,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .then((url) => {
-        if (!cancelled) setQrDataUrl(url);
-      })
-      .catch((error) => {
-        console.error("[PaymentQR] QR generation failed:", error);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [upiId, amount, note, payeeName]);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -69,19 +50,25 @@ export function PaymentQR({
         <p className="text-xs text-[#A1A1A1]">
           Pay {CURRENCY} {amount.toLocaleString("en-IN")} to <span className="text-white">{upiId}</span>
         </p>
+        <p className="text-xs text-[#A1A1A1]">
+          {payeeName}
+          {note ? ` · ${note}` : ""}
+        </p>
       </div>
 
-      {qrDataUrl ? (
+      {imageFailed ? (
+        <div className="flex size-60 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 text-center text-xs text-[#A1A1A1]">
+          QR image unavailable — pay {CURRENCY} {amount.toLocaleString("en-IN")} to{" "}
+          <span className="font-medium text-white">{upiId}</span>
+        </div>
+      ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={qrDataUrl}
+          src={qrImage}
           alt={`UPI QR code for ${upiId}`}
-          className="size-60 rounded-xl border border-white/10 bg-white p-2"
+          onError={() => setImageFailed(true)}
+          className="size-60 rounded-xl border border-white/10 bg-white p-2 object-contain"
         />
-      ) : (
-        <div className="flex size-60 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-          <span className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-        </div>
       )}
 
       <div className="flex w-full flex-col gap-2">

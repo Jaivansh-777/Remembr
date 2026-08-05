@@ -67,15 +67,15 @@ export async function POST(request: Request, context: RouteContext) {
       const userRef = db.collection("users").doc(data.userId as string);
       await userRef.set(
         {
-          tier: data.plan === "team" ? "team" : "pro",
+          tier: data.plan === "pro" ? "pro" : "starter",
           paymentVerifiedAt: FieldValue.serverTimestamp(),
           billing: {
             fullName: data.fullName ?? null,
             address: data.address ?? null,
             pincode: data.pincode ?? null,
             mobileNumber: data.mobileNumber ?? null,
-            plan: data.plan ?? "pro",
-            amount: data.amount ?? PLANS.pro.amount,
+            plan: data.plan ?? "starter",
+            amount: data.amount ?? PLANS.starter.priceMonthly,
           },
         },
         { merge: true }

@@ -6,7 +6,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import {
   billingSchema,
   CURRENCY,
-  isPlanId,
+  isPaidPlan,
   PLANS,
 } from "@/lib/validations/payment";
 
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!isPlanId((body as { plan?: unknown })?.plan)) {
+  if (!isPaidPlan((body as { plan?: unknown })?.plan)) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const plan = (body as { plan: keyof typeof PLANS }).plan;
+  const plan = (body as { plan: "starter" | "pro" }).plan;
   const ref = db.collection("payments").doc();
 
   try {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       userId: auth.user.uid,
       userEmail: auth.user.email ?? "",
       plan,
-      amount: PLANS[plan].amount,
+      amount: PLANS[plan].priceMonthly,
       currency: CURRENCY,
       status: "pending",
       fullName: parsed.data.fullName,
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { paymentId: ref.id, plan, amount: PLANS[plan].amount },
+    { paymentId: ref.id, plan, amount: PLANS[plan].priceMonthly },
     { status: 201 }
   );
 }

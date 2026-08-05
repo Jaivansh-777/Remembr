@@ -3,51 +3,90 @@ import { z } from "zod";
 export const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID ?? "remembr@fam";
 export const CURRENCY = "INR";
 
-export type PlanId = "pro" | "team";
+export type PlanId = "free" | "starter" | "pro";
 
 export interface PlanConfig {
   id: PlanId;
   label: string;
   shortLabel: string;
-  description: string;
-  amount: number;
+  emoji: string;
+  tagline: string;
+  /** Monthly price in INR. 0 for the free plan. Doubles as the one-time UPI payment amount. */
+  priceMonthly: number;
   note: string;
   features: string[];
+  memoryBadge: string;
+  /** Ribbon badge shown on the card, e.g. "Most Popular". */
+  highlight: string | null;
 }
 
 export const PLANS: Record<PlanId, PlanConfig> = {
+  free: {
+    id: "free",
+    label: "Free",
+    shortLabel: "Free",
+    emoji: "🐠",
+    tagline: "Try the magic — no card required",
+    priceMonthly: 0,
+    note: "Remembr Free plan",
+    features: [
+      "Unlimited messages",
+      "5 cross-session memories (Beta)",
+      "Memory mode: Goldfish + 5 memories",
+      "Files: Images only",
+      "Dashboard: View only",
+      "Community support",
+    ],
+    memoryBadge: "5 Free Memories — Try the magic",
+    highlight: "Beta",
+  },
+  starter: {
+    id: "starter",
+    label: "Starter",
+    shortLabel: "Starter",
+    emoji: "🤝",
+    tagline: "Unlimited memory for daily chat",
+    priceMonthly: Number(process.env.NEXT_PUBLIC_PLAN_AMOUNT ?? 199),
+    note: "Remembr Starter plan",
+    features: [
+      "Unlimited messages",
+      "Unlimited cross-session memory",
+      "Memory mode: Buddy (remembers 3 sessions)",
+      "Files: Images + PDFs + DOCX",
+      "Dashboard: Full access",
+      "24hr email support",
+    ],
+    memoryBadge: "Unlimited Memories",
+    highlight: "Most Popular",
+  },
   pro: {
     id: "pro",
-    label: "Remembr Pro",
+    label: "Pro",
     shortLabel: "Pro",
-    description: "Unlimited AI memory with no daily caps",
-    amount: Number(process.env.NEXT_PUBLIC_PLAN_AMOUNT ?? 199),
+    emoji: "❤️",
+    tagline: "Remembers everything, forever",
+    priceMonthly: 599,
     note: "Remembr Pro plan",
     features: [
-      "Unlimited daily messages",
-      "Priority AI responses",
-      "File uploads & storage",
-      "Everything you love, without limits",
+      "Unlimited messages",
+      "Unlimited cross-session memory",
+      "Memory mode: Soulmate (remembers forever)",
+      "Files: All formats",
+      "Dashboard: Full + Insights",
+      "Priority support + WhatsApp",
     ],
-  },
-  team: {
-    id: "team",
-    label: "Remembr Team",
-    shortLabel: "Team",
-    description: "Everything in Pro plus shared team projects",
-    amount: 499,
-    note: "Remembr Team plan",
-    features: [
-      "Everything in Pro",
-      "Unlimited team projects",
-      "Shared team memory",
-      "Invite & manage members",
-    ],
+    memoryBadge: "Unlimited + Soulmate",
+    highlight: "Best Value",
   },
 };
 
 export function isPlanId(value: unknown): value is PlanId {
-  return value === "pro" || value === "team";
+  return value === "free" || value === "starter" || value === "pro";
+}
+
+/** True only for plans that are payable via UPI. */
+export function isPaidPlan(value: unknown): value is "starter" | "pro" {
+  return value === "starter" || value === "pro";
 }
 
 export const billingSchema = z.object({
@@ -71,28 +110,4 @@ export const billingSchema = z.object({
 
 export type BillingFormValues = z.infer<typeof billingSchema>;
 
-/** Builds the UPI deep link encoded inside the QR code. */
-export function upiDeepLink(opts: {
-  upiId: string;
-  amount: number;
-  note: string;
-  name?: string;
-}): string {
-  const params = new URLSearchParams({
-    pa: opts.upiId,
-    pn: opts.name ?? "Remembr",
-    am: opts.amount.toFixed(2),
-    cu: CURRENCY,
-    tn: opts.note,
-  });
-  return `upi://pay?${params.toString()}`;
-}
-
 export type PaymentStatus = "pending" | "verified" | "failed" | "timeout";
-
-export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
-  pending: "Pending",
-  verified: "Verified",
-  failed: "Failed",
-  timeout: "Timeout",
-};

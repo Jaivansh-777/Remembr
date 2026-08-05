@@ -37,8 +37,7 @@ export function toPaymentDoc(
     userId: String(data.userId ?? ""),
     userEmail: String(data.userEmail ?? ""),
     plan,
-    planLabel: PLANS[plan].shortLabel,
-    amount: Number(data.amount ?? 0),
+    planLabel: PLANS[plan].shortLabel,    amount: Number(data.amount ?? 0),
     currency: String(data.currency ?? "INR"),
     status,
     fullName: String(data.fullName ?? ""),
@@ -53,8 +52,8 @@ export function toPaymentDoc(
   };
 }
 
-function isPlanIdSafe(value: unknown): value is PlanId {
-  return value === "pro" || value === "team";
+function isPlanIdSafe(value: unknown): value is "starter" | "pro" {
+  return value === "starter" || value === "pro";
 }
 
 /** Normalizes a Firestore Timestamp / Date / number / seconds-object into millis. */

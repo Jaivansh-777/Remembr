@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, BadgeCheck, Check, Crown } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import {
@@ -10,21 +10,35 @@ import {
   type CreatedPayment,
 } from "@/components/payment/BillingForm";
 import { PaymentQR } from "@/components/payment/PaymentQR";
+import { MemoryCounter } from "@/components/upgrade/MemoryCounter";
+import { PlanCard } from "@/components/upgrade/PlanCard";
+import { useAuth } from "@/lib/auth-context";
+import { watchMemories, watchUser } from "@/lib/firebase/firestore";
 import { CURRENCY, PLANS, UPI_ID, type PlanId } from "@/lib/validations/payment";
-import { cn } from "@/lib/utils";
 
 function UpgradeContent() {
   const router = useRouter();
-  const [plan, setPlan] = useState<PlanId>("pro");
+  const { user } = useAuth();
+  const [tier, setTier] = useState<string | null>(null);
+  const [memoryCount, setMemoryCount] = useState(0);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [payment, setPayment] = useState<CreatedPayment | null>(null);
 
-  const handlePaymentCreated = (created: CreatedPayment) => {
-    setPayment(created);
-  };
+  useEffect(() => {
+    if (!user?.uid) return;
+    return watchUser(user.uid, (data) =>
+      setTier((data?.tier as string) ?? "free")
+    );
+  }, [user?.uid]);
 
-  const handleSelectPlan = (next: PlanId) => {
-    if (next === plan) return;
-    setPlan(next);
+  useEffect(() => {
+    if (!user?.uid) return;
+    return watchMemories(user.uid, (items) => setMemoryCount(items.length));
+  }, [user?.uid]);
+
+  const handleSelectPlan = (planId: PlanId) => {
+    if (planId === "free" || planId === selectedPlan) return;
+    setSelectedPlan(planId);
     setPayment(null);
   };
 
@@ -34,8 +48,13 @@ function UpgradeContent() {
     }
   };
 
+  const planIsCurrent = (planId: PlanId): boolean => {
+    if (planId === "free") return tier === null || tier === "free";
+    return tier === planId;
+  };
+
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10">
       <div className="flex items-center gap-3">
         <a
           href="/chat"
@@ -48,97 +67,81 @@ function UpgradeContent() {
             Upgrade Remembr
           </h1>
           <p className="text-sm text-[#A1A1A1]">
-            One-time UPI payment · Verified manually by our team
+            Pay once via UPI · verified manually by our team
           </p>
         </div>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {(Object.keys(PLANS) as PlanId[]).map((id) => {
-          const config = PLANS[id];
-          const selected = plan === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleSelectPlan(id)}
-              className={cn(
-                "flex flex-col gap-3 rounded-2xl border p-5 text-left transition-colors",
-                selected
-                  ? "border-white/60 bg-white/10"
-                  : "border-white/10 bg-white/5 hover:bg-white/[0.07]"
-              )}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  {id === "pro" ? (
-                    <Crown className="size-4 text-white" />
-                  ) : (
-                    <BadgeCheck className="size-4 text-white" />
-                  )}
-                  <span className="text-sm font-semibold text-white">
-                    {config.label}
-                  </span>
-                </div>
-                <span
-                  className={cn(
-                    "size-4 rounded-full border",
-                    selected ? "border-white bg-white" : "border-white/30"
-                  )}
-                >
-                  {selected && (
-                    <Check className="size-3.5 -translate-x-px text-[#0A0A0A]" />
-                  )}
-                </span>
-              </div>
-              <p className="text-xs text-[#A1A1A1]">{config.description}</p>
-              <p className="text-lg font-semibold text-white">
-                {CURRENCY}{" "}
-                <span className="text-2xl">{config.amount.toLocaleString("en-IN")}</span>
-                <span className="text-xs font-normal text-[#A1A1A1]"> one-time</span>
-              </p>
-              <ul className="flex flex-col gap-1">
-                {config.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-1.5 text-xs text-[#A1A1A1]">
-                    <Check className="mt-0.5 size-3 shrink-0 text-white" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </button>
-          );
-        })}
-      </section>
+      <MemoryCounter tier={tier} count={memoryCount} />
 
-      <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5">
-        {payment ? (
-          <PaymentQR
-            upiId={UPI_ID}
-            amount={payment.amount}
-            note={PLANS[payment.plan].note}
-            payeeName="Remembr"
-            onPaid={handlePaid}
+      <section className="grid grid-cols-1 gap-6 pt-3 md:grid-cols-3">
+        {(Object.keys(PLANS) as PlanId[]).map((planId) => (
+          <PlanCard
+            key={planId}
+            planId={planId}
+            isCurrent={planIsCurrent(planId)}
+            selected={selectedPlan === planId}
+            onSelect={() => handleSelectPlan(planId)}
           />
-        ) : (
-          <>
-            <div className="flex flex-col gap-1">
-              <h2 className="text-sm font-semibold text-white">Billing details</h2>
-              <p className="text-xs text-[#A1A1A1]">
-                Required for your receipt & verification for{" "}
-                <span className="text-white">{PLANS[plan].shortLabel}</span>
-              </p>
-            </div>
-            <BillingForm plan={plan} onPaymentCreated={handlePaymentCreated} />
-          </>
-        )}
+        ))}
       </section>
 
-      <p className="text-center text-xs text-[#A1A1A1]">
-        Already upgraded?{" "}
-        <a href="/settings" className="text-white underline-offset-4 hover:underline">
-          Check your plan
-        </a>
-      </p>
+      {selectedPlan && (
+        <section className="mx-auto flex w-full max-w-md flex-col gap-4">
+          {payment ? (
+            <>
+              <PaymentQR
+                upiId={UPI_ID}
+                amount={PLANS[selectedPlan].priceMonthly}
+                note={PLANS[selectedPlan].note}
+                payeeName="Remembr"
+                onPaid={handlePaid}
+              />
+              <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
+                <h3 className="text-sm font-semibold text-white">
+                  Payment summary
+                </h3>
+                <dl className="flex flex-col gap-1.5">
+                  <div className="flex justify-between">
+                    <dt className="text-[#A1A1A1]">Plan</dt>
+                    <dd className="font-medium text-white">
+                      {PLANS[selectedPlan].label} · {CURRENCY}{" "}
+                      {PLANS[selectedPlan].priceMonthly.toLocaleString("en-IN")}/month
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-[#A1A1A1]">Pay now (UPI)</dt>
+                    <dd className="font-medium text-white">
+                      {CURRENCY} {PLANS[selectedPlan].priceMonthly.toLocaleString("en-IN")}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-[#A1A1A1]">UPI ID</dt>
+                    <dd className="font-medium text-white">{UPI_ID}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-[#A1A1A1]">Verification</dt>
+                    <dd className="text-[#A1A1A1]">Manual · ~1 minute</dd>
+                  </div>
+                </dl>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-sm font-semibold text-white">
+                  Pay for {PLANS[selectedPlan].label}
+                </h2>
+                <p className="text-xs text-[#A1A1A1]">
+                  {CURRENCY} {PLANS[selectedPlan].priceMonthly.toLocaleString("en-IN")}/month
+                  {" "}· one-time UPI payment now
+                </p>
+              </div>
+              <BillingForm plan={selectedPlan} onPaymentCreated={setPayment} />
+            </div>
+          )}
+        </section>
+      )}
     </main>
   );
 }

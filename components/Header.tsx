@@ -52,6 +52,13 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/upgrade"
+            className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:flex"
+          >
+            <Sparkles className="size-3.5" />
+            Upgrade
+          </Link>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -86,7 +93,7 @@ export function Header() {
                     className="flex cursor-pointer items-center gap-2"
                   >
                     <Sparkles className="size-4" />
-                    Upgrade to Pro
+                    Upgrade plan
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
