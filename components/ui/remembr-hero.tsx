@@ -127,16 +127,11 @@ const RemembrHero = () => {
           style={{ animationDelay: "0.45s" }}
         >
           <div className="flex w-full max-w-[92vw] flex-col items-center justify-center gap-4 pb-10 sm:max-w-[80vw] md:max-w-[560px]">
-            <GoogleSignIn />
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                size="lg"
-                asChild
-                variant="outline"
+              <GoogleSignIn
+                label="Start chatting — it&apos;s free"
                 className="h-12 w-full border-[#7C3AED]/40 bg-white/5 px-6 text-sm font-medium text-[#171717] backdrop-blur hover:bg-white/10 dark:text-white sm:w-auto"
-              >
-                <Link href="/signup">Start chatting — it&apos;s free</Link>
-              </Button>
+              />
               <Button
                 size="lg"
                 asChild

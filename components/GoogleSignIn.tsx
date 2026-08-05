@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   auth,
@@ -15,6 +16,11 @@ import {
   signInWithRedirect,
 } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+
+interface GoogleSignInProps {
+  className?: string;
+  label?: string;
+}
 
 function GoogleLogo() {
   return (
@@ -53,7 +59,10 @@ function getErrorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-export default function GoogleSignIn() {
+export default function GoogleSignIn({
+  className,
+  label = "Sign in with Google",
+}: GoogleSignInProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -120,10 +129,13 @@ export default function GoogleSignIn() {
       type="button"
       onClick={handleSignIn}
       disabled={pending}
-      className="h-12 w-full gap-3 rounded-lg border border-[#DADCE0] bg-white px-6 text-base font-medium text-black hover:bg-[#F5F5F5] disabled:opacity-70 sm:w-auto"
+      className={cn(
+        "h-12 w-full gap-3 rounded-lg border border-[#DADCE0] bg-white px-6 text-base font-medium text-black hover:bg-[#F5F5F5] disabled:opacity-70 sm:w-auto",
+        className
+      )}
     >
       <GoogleLogo />
-      {pending ? "Signing in…" : "Sign in with Google"}
+      {pending ? "Signing in…" : label}
     </Button>
   );
 }
