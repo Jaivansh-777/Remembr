@@ -46,6 +46,7 @@ function setAuthCookie(token: string | null) {
 }
 
 async function syncUserProfile(user: User) {
+  if (!db) return;
   const userRef = doc(db, "users", user.uid);
   try {
     const snapshot = await getDoc(userRef);
@@ -70,9 +71,10 @@ async function syncUserProfile(user: User) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(Boolean(auth));
 
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -89,7 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await firebaseSignOut(auth);
+    if (auth) {
+      await firebaseSignOut(auth);
+    }
   }, []);
 
   return (

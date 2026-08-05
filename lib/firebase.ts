@@ -1,4 +1,9 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import {
+  initializeApp,
+  getApps,
+  getApp,
+  type FirebaseApp,
+} from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -16,6 +21,7 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  type Firestore,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -28,11 +34,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
+const hasConfig =
+  Boolean(firebaseConfig.apiKey) &&
+  Boolean(firebaseConfig.authDomain) &&
+  Boolean(firebaseConfig.projectId) &&
+  Boolean(firebaseConfig.appId);
+
+const app: FirebaseApp | null = hasConfig
+  ? getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApp()
+  : null;
+const auth = app ? getAuth(app) : null;
 const googleProvider = new GoogleAuthProvider();
-const db = getFirestore(app);
-const storage = getStorage(app);
+const db: Firestore | null = app ? getFirestore(app) : null;
+const storage = app ? getStorage(app) : null;
 
 export {
   app,
@@ -40,6 +56,7 @@ export {
   googleProvider,
   db,
   storage,
+  hasConfig,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,

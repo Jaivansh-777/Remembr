@@ -59,6 +59,7 @@ export default function GoogleSignIn() {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    if (!auth) return;
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
@@ -71,6 +72,10 @@ export default function GoogleSignIn() {
   }, [router]);
 
   const handleSignIn = async () => {
+    if (!auth) {
+      toast.error("Firebase is not configured. Check environment variables.");
+      return;
+    }
     setPending(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
