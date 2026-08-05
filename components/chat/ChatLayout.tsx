@@ -85,8 +85,10 @@ export function ChatLayout() {
     if (!activeChatId) return;
     const unsub = watchMessages(activeChatId, (items) => {
       setMessages(items);
-      setStreaming(null);
-      setThinking(false);
+      if (!sendingRef.current) {
+        setStreaming(null);
+        setThinking(false);
+      }
     });
     return unsub;
   }, [activeChatId]);
@@ -203,6 +205,8 @@ export function ChatLayout() {
         }
       } finally {
         sendingRef.current = false;
+        setThinking(false);
+        setStreaming(null);
       }
     },
     [user, ensureChat]
