@@ -7,6 +7,7 @@ import { FileUpload } from "@/components/files/FileUpload";
 import { FileIconFor } from "@/components/files/FilePreview";
 import type { Attachment } from "@/lib/chat";
 import type { FileDoc } from "@/lib/file-types";
+import { shortFileName } from "@/lib/file-types";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
@@ -87,7 +88,9 @@ export function ChatInput({
               className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 py-1 pr-1.5 pl-2.5 text-xs text-white/90 backdrop-blur-xl"
             >
               {FileIconFor(attachment.category)}
-              <span className="max-w-40 truncate">{attachment.name}</span>
+              <span className="max-w-40 truncate" title={attachment.name}>
+                {shortFileName(attachment.name)}
+              </span>
               <button
                 type="button"
                 aria-label={`Remove ${attachment.name}`}

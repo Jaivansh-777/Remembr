@@ -23,6 +23,7 @@ import {
   FILE_TIERS,
   formatBytes,
   isSupportedFileName,
+  shortFileName,
   type FileDoc,
 } from "@/lib/file-types";
 import {
@@ -370,7 +371,9 @@ function QueueRow({
         {statusIcon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-white">{item.file.name}</p>
+        <p className="truncate text-xs font-medium text-white" title={item.file.name}>
+          {shortFileName(item.file.name)}
+        </p>
         <div className="flex items-center gap-2 text-[10px] text-[#A1A1A1]">
           <span>{formatBytes(item.file.size)}</span>
           {item.status === "uploading" ? (

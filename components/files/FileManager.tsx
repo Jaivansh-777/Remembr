@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useFiles } from "@/lib/hooks/use-files";
 import {
   formatBytes,
+  shortFileName,
   type FileCategory,
   type FileDoc,
 } from "@/lib/file-types";
@@ -240,7 +241,9 @@ function FileDetail({
       <div className="animate-modal-in flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-white/10 bg-[#141414]/95 shadow-2xl backdrop-blur-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-white">{file.name}</h2>
+            <h2 className="truncate text-sm font-semibold text-white" title={file.name}>
+              {shortFileName(file.name)}
+            </h2>
             <p className="mt-0.5 text-xs text-[#A1A1A1]">
               {formatBytes(file.size)} ·{" "}
               {new Date(file.createdAt).toLocaleDateString()}

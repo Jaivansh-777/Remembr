@@ -3,7 +3,12 @@
 import { Download, FileText, Trash2 } from "lucide-react";
 
 import { FileIconFor } from "@/components/files/FilePreview";
-import { formatBytes, type FileCategory, type FileDoc } from "@/lib/file-types";
+import {
+  formatBytes,
+  shortFileName,
+  type FileCategory,
+  type FileDoc,
+} from "@/lib/file-types";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<FileCategory, string> = {
@@ -81,7 +86,9 @@ export function FileList({ files, onOpen, onDelete }: FileListProps) {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="truncate text-sm font-medium text-white">{file.name}</p>
+              <p className="min-w-0 truncate text-sm font-medium text-white" title={file.name}>
+                {shortFileName(file.name)}
+              </p>
               {file.status === "error" ? (
                 <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-px text-[10px] font-medium text-red-300">
                   failed

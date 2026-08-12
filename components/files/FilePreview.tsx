@@ -12,7 +12,11 @@ import {
 
 import type { Attachment } from "@/lib/chat";
 import type { FileCategory } from "@/lib/file-types";
-import { formatBytes, isImageType } from "@/lib/file-types";
+import {
+  formatBytes,
+  isImageType,
+  shortFileName,
+} from "@/lib/file-types";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<FileCategory, string> = {
@@ -70,8 +74,10 @@ export function FilePreview({ attachment }: { attachment: Attachment }) {
           className="max-h-44 w-full object-cover"
         />
         <span className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 text-xs font-medium text-white">
-          <ImageIcon className="size-3.5" />
-          <span className="truncate">{attachment.name}</span>
+          <ImageIcon className="size-3.5 shrink-0" />
+          <span className="truncate" title={attachment.name}>
+            {shortFileName(attachment.name)}
+          </span>
         </span>
       </a>
     );
@@ -89,16 +95,16 @@ export function FilePreview({ attachment }: { attachment: Attachment }) {
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-white">
-          {attachment.name}
+        <span className="block truncate text-sm font-medium text-white" title={attachment.name}>
+          {shortFileName(attachment.name)}
         </span>
-        <span className="mt-0.5 flex items-center gap-2">
-          <span className="rounded-full border border-white/15 bg-white/10 px-1.5 py-px text-[10px] font-medium text-white/80">
+        <span className="mt-0.5 flex min-w-0 items-center gap-2">
+          <span className="shrink-0 rounded-full border border-white/15 bg-white/10 px-1.5 py-px text-[10px] font-medium text-white/80">
             {CATEGORY_LABEL[category]}
           </span>
-          <span>{formatBytes(attachment.size)}</span>
+          <span className="shrink-0">{formatBytes(attachment.size)}</span>
           {attachment.processed && attachment.summary ? (
-            <span className="truncate text-[10px] text-[#A1A1A1]">
+            <span className="min-w-0 truncate text-[10px] text-[#A1A1A1]">
               {attachment.summary}
             </span>
           ) : null}

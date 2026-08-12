@@ -148,3 +148,20 @@ export function formatBytes(bytes: number): string {
 export function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
+
+/**
+ * Compact display name: strips directory paths and truncates long names,
+ * preserving a short extension. Use this everywhere a filename is shown.
+ */
+export function shortFileName(name: string, maxLength = 22): string {
+  if (!name) return name;
+  const clean = name.split(/[\\/]/).pop() ?? name;
+  if (clean.length <= maxLength) return clean;
+  const dot = clean.lastIndexOf(".");
+  const ext = dot > clean.length - 8 && dot > 0 ? clean.slice(dot) : "";
+  const budget = maxLength - ext.length - 1;
+  if (ext && budget > 4) {
+    return `${clean.slice(0, budget)}…${ext}`;
+  }
+  return `${clean.slice(0, maxLength - 1)}…`;
+}
