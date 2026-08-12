@@ -153,7 +153,7 @@ export async function analyzeContent(
       fn: () =>
         completeOpenRouter({
           apiKey: openRouterKey,
-          model: "google/gemma-3-27b-it:free",
+          model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
           system: ANALYSIS_PROMPT,
           messages: [{ role: "user", content: body }],
         }),
@@ -166,7 +166,7 @@ export async function analyzeContent(
       fn: () =>
         completeOpenRouter({
           apiKey: openRouterFallbackKey,
-          model: "google/gemma-3-27b-it:free",
+          model: "google/gemma-4-26b-a4b-it:free",
           system: ANALYSIS_PROMPT,
           messages: [{ role: "user", content: body }],
         }),

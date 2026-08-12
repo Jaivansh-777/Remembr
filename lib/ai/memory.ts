@@ -140,7 +140,7 @@ export async function extractMemories(
       fn: () =>
         completeOpenRouter({
           apiKey: openRouterKey,
-          model: "google/gemma-3-27b-it:free",
+          model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
           system: EXTRACTION_PROMPT,
           messages: [{ role: "user", content: exchange }],
         }),
@@ -153,7 +153,7 @@ export async function extractMemories(
       fn: () =>
         completeOpenRouter({
           apiKey: openRouterFallbackKey,
-          model: "google/gemma-3-27b-it:free",
+          model: "google/gemma-4-26b-a4b-it:free",
           system: EXTRACTION_PROMPT,
           messages: [{ role: "user", content: exchange }],
         }),
