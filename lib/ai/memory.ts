@@ -1,6 +1,7 @@
 import { completeGemini } from "@/lib/ai/providers/gemini";
 import { completeGroq } from "@/lib/ai/providers/groq";
 import { completeOpenRouter } from "@/lib/ai/providers/openrouter";
+import { festivalCalendarBlock } from "@/lib/festivals";
 
 export type ExtractedMemoryType =
   | "fact"
@@ -209,6 +210,8 @@ export function buildSystemPrompt(input: MemoryPromptInput): string {
 
   const now = new Date();
   prompt += `\n\n[CURRENT DATE]\nThe current date and time is: ${now.toISOString()} (Year: ${now.getFullYear()}). Always treat this as "now" when answering questions about dates, times, the current year, or how long ago something happened. Never assume the current year from your training data — it is ${now.getFullYear()}, not any year in your training cutoff.`;
+
+  prompt += `\n\n${festivalCalendarBlock()}`;
 
   if (memories.length > 0 && mode !== "goldfish") {
     const header = isTeam
