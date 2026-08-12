@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
+import { User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -14,8 +15,10 @@ import {
   auth,
   getRedirectResult,
   googleProvider,
+  signInAnonymously,
   signInWithPopup,
   signInWithRedirect,
+  signOut,
 } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import type { TrialBlockReason } from "@/lib/trial-protection";
@@ -59,6 +62,10 @@ function getErrorMessage(error: unknown): string {
         return "Please add this domain to Firebase Console";
       case "auth/network-request-failed":
         return "Network error, please try again";
+      case "auth/operation-not-allowed":
+        return "Guest access is not enabled. Enable Anonymous sign-in in Firebase Console.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Please try again later.";
     }
   }
   return "Something went wrong. Please try again.";
@@ -162,6 +169,30 @@ export default function GoogleSignIn({
     }
   };
 
+  const handleGuestSignIn = async () => {
+    if (!auth) {
+      toast.error("Firebase is not configured. Check environment variables.");
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await signInAnonymously(auth);
+      if (result.user) {
+        const allowed = await runTrialGuard(result.user);
+        if (allowed) {
+          router.push("/chat");
+        } else {
+          // Trial already used on this device/IP — undo the throwaway account.
+          await signOut(auth).catch(() => undefined);
+        }
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  };
+
   if (loading) {
     return null;
   }
@@ -186,18 +217,30 @@ export default function GoogleSignIn({
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={handleSignIn}
-        disabled={pending}
-        className={cn(
-          "h-12 w-full gap-3 rounded-lg border border-[#DADCE0] bg-white px-6 text-base font-medium text-black hover:bg-[#F5F5F5] disabled:opacity-70 sm:w-auto",
-          className
-        )}
-      >
-        <GoogleLogo />
-        {pending ? "Signing in…" : label}
-      </Button>
+      <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+        <Button
+          type="button"
+          onClick={handleSignIn}
+          disabled={pending}
+          className={cn(
+            "h-12 w-full gap-3 rounded-lg border border-[#DADCE0] bg-white px-6 text-base font-medium text-black hover:bg-[#F5F5F5] disabled:opacity-70 sm:w-auto",
+            className
+          )}
+        >
+          <GoogleLogo />
+          {pending ? "Signing in…" : label}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={handleGuestSignIn}
+          disabled={pending}
+          className="h-12 w-full gap-3 rounded-lg border border-white/15 bg-white/5 px-6 text-base font-medium text-white backdrop-blur-xl hover:bg-white/10 disabled:opacity-70 sm:w-auto dark:border-white/20"
+        >
+          <UserIcon className="size-4.5" />
+          Continue as guest
+        </Button>
+      </div>
       <BlockedDeviceModal
         open={blocked !== null}
         reason={blocked}

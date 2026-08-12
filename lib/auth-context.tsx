@@ -54,7 +54,7 @@ async function syncUserProfile(user: User) {
       await updateDoc(userRef, { lastLogin: serverTimestamp() });
     } else {
       await setDoc(userRef, {
-        name: user.displayName || "Anonymous",
+        name: user.isAnonymous ? "Guest" : user.displayName || "Anonymous",
         email: user.email,
         photoURL: user.photoURL || null,
         tier: "free",

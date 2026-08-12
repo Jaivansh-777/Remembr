@@ -11,6 +11,7 @@ import {
   signInWithRedirect,
   getRedirectResult,
   onAuthStateChanged,
+  signInAnonymously,
   signOut,
   type User,
 } from "firebase/auth";
@@ -59,6 +60,7 @@ export {
   hasConfig,
   signInWithPopup,
   signInWithRedirect,
+  signInAnonymously,
   getRedirectResult,
   onAuthStateChanged,
   signOut,
