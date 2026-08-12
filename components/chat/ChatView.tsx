@@ -13,8 +13,6 @@ interface ChatViewProps {
   onSend: (text: string, attachments: Attachment[]) => void;
   onStop: () => void;
   onMagic: () => void;
-  onRegenerate: () => void;
-  canRegenerate: boolean;
   onPickSuggestion: (text: string) => void;
 }
 
@@ -26,8 +24,6 @@ export function ChatView({
   onSend,
   onStop,
   onMagic,
-  onRegenerate,
-  canRegenerate,
   onPickSuggestion,
 }: ChatViewProps) {
   const busy = Boolean(thinking || streaming);
@@ -39,8 +35,6 @@ export function ChatView({
           messages={messages}
           streaming={streaming}
           thinking={thinking}
-          onRegenerate={onRegenerate}
-          canRegenerate={canRegenerate}
           empty={<EmptyState onPickSuggestion={onPickSuggestion} />}
         />
       </div>

@@ -15,7 +15,6 @@ import {
   archiveChat,
   createChat,
   deleteChat,
-  deleteMessage,
   getMemoryContext,
   renameChat,
   restoreChat,
@@ -208,6 +207,8 @@ export function ChatLayout() {
         }
 
         if (full.trim()) {
+          setStreaming(null);
+          setThinking(false);
           await addMessage(chatId, {
             role: "assistant",
             content: full,
@@ -265,35 +266,6 @@ export function ChatLayout() {
     },
     [user, ensureChat, buildHistory, streamAssistantReply]
   );
-
-  const handleRegenerate = useCallback(async () => {
-    if (!user || sendingRef.current || !activeChatIdRef.current) return;
-    const msgs = messagesRef.current;
-    const reversedIndex = [...msgs].reverse().findIndex((m) => m.role === "user");
-    if (reversedIndex === -1) return;
-    const lastUserIndex = msgs.length - 1 - reversedIndex;
-    const lastUser = msgs[lastUserIndex];
-    const trailing = msgs[lastUserIndex + 1];
-    if (trailing && trailing.role === "assistant") {
-      await deleteMessage(activeChatIdRef.current, trailing.id).catch(() => undefined);
-    }
-    sendingRef.current = true;
-    try {
-      const history = msgs
-        .slice(0, lastUserIndex)
-        .map((m) => ({ role: m.role, content: m.content }));
-      await streamAssistantReply(
-        activeChatIdRef.current,
-        history,
-        lastUser.content,
-        lastUser.attachments ?? []
-      );
-    } catch (error) {
-      console.error("[chat-layout] regenerate failed:", error);
-    } finally {
-      sendingRef.current = false;
-    }
-  }, [user, streamAssistantReply]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -392,8 +364,6 @@ export function ChatLayout() {
     );
   }
 
-  const canRegenerate = messages.some((m) => m.role === "user");
-
   return (
     <div className="relative flex h-dvh overflow-hidden bg-[#0A0A0A] text-white">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
@@ -431,8 +401,6 @@ export function ChatLayout() {
           onSend={(text, attachments) => void handleSend(text, attachments)}
           onMagic={handleMagic}
           onStop={handleStop}
-          onRegenerate={() => void handleRegenerate()}
-          canRegenerate={canRegenerate && !thinking && !streaming}
           onPickSuggestion={(text) => void handleSend(text, [])}
         />
       </div>
