@@ -207,6 +207,9 @@ export function buildSystemPrompt(input: MemoryPromptInput): string {
 
   let prompt = `You are Remembr, a memory-first AI assistant. You help users with their projects, code, documents, and ideas.`;
 
+  const now = new Date();
+  prompt += `\n\n[CURRENT DATE]\nThe current date and time is: ${now.toISOString()} (Year: ${now.getFullYear()}). Always treat this as "now" when answering questions about dates, times, the current year, or how long ago something happened. Never assume the current year from your training data — it is ${now.getFullYear()}, not any year in your training cutoff.`;
+
   if (memories.length > 0 && mode !== "goldfish") {
     const header = isTeam
       ? `\n\n[TEAM MEMORIES]\nHere are shared memories${input.projectName ? ` for the project "${input.projectName}"` : ""} gathered from team conversations:\n`
