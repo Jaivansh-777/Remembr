@@ -10,8 +10,6 @@ export interface ChatRequest {
   userId: string;
   memoryMode: string;
   chatId?: string;
-  projectId?: string;
-  projectName?: string;
   userName?: string;
   attachments?: Attachment[];
   memories?: { content: string; type?: string }[];
@@ -21,7 +19,8 @@ export interface ChatRequest {
 /** POSTs to /api/chat and yields parsed SSE events. */
 export async function* streamChat(
   payload: ChatRequest,
-  token: string
+  token: string,
+  signal?: AbortSignal
 ): AsyncGenerator<ChatStreamEvent> {
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -30,6 +29,7 @@ export async function* streamChat(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
+    signal,
   });
 
   if (!response.ok) {
@@ -111,7 +111,6 @@ export async function storeMemoriesApi(
   opts: {
     memories: { content: string; type?: string }[];
     chatId?: string;
-    projectId?: string;
   }
 ): Promise<boolean> {
   const response = await fetch("/api/memories", {
@@ -123,7 +122,6 @@ export async function storeMemoriesApi(
     body: JSON.stringify({
       memories: opts.memories,
       chatId: opts.chatId,
-      projectId: opts.projectId,
     }),
   });
   if (!response.ok) return false;

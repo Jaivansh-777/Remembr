@@ -73,7 +73,6 @@ export interface ProcessedFilePayload {
 export interface FileDoc {
   id: string;
   userId: string;
-  projectId?: string | null;
   chatId?: string | null;
   name: string;
   url: string;

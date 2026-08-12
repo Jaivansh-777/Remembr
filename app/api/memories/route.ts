@@ -23,7 +23,6 @@ function jsonResponse(body: unknown, status: number) {
 interface StoreMemoryBody {
   memories: { content: string; type?: string; confidence?: number }[];
   chatId?: string;
-  projectId?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -113,7 +112,6 @@ export async function POST(request: NextRequest) {
     .map((m) => ({
       id: createId(),
       userId: user.uid,
-      projectId: body.projectId ?? null,
       chatId: body.chatId ?? null,
       content: m.content.trim(),
       type: m.type ?? "fact",

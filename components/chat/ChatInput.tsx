@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, Send, Sparkles, X } from "lucide-react";
+import { Paperclip, Send, Sparkles, Square, X } from "lucide-react";
 
 import { FileUpload } from "@/components/files/FileUpload";
 import { FileIconFor } from "@/components/files/FilePreview";
@@ -12,10 +12,10 @@ import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   onSend: (text: string, attachments: Attachment[]) => void;
+  onStop: () => void;
   onMagic: () => void;
   disabled?: boolean;
   userId?: string | null;
-  projectId?: string | null;
 }
 
 function toAttachment(file: FileDoc): Attachment {
@@ -34,9 +34,9 @@ function toAttachment(file: FileDoc): Attachment {
 
 export function ChatInput({
   onSend,
+  onStop,
   onMagic,
   disabled,
-  projectId,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -113,7 +113,8 @@ export function ChatInput({
           type="button"
           aria-label="Attach file"
           onClick={() => setFileModalOpen(true)}
-          className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white"
+          disabled={disabled}
+          className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white disabled:pointer-events-none disabled:opacity-40"
         >
           <Paperclip className="size-4.5" />
         </button>
@@ -124,22 +125,30 @@ export function ChatInput({
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder="Message Remembr…"
-          className="min-h-10 max-h-40 flex-1 resize-none bg-transparent py-2.5 text-sm leading-relaxed text-white placeholder:text-[#A1A1A1] focus:outline-none"
+          disabled={disabled}
+          placeholder={disabled ? "Remembr is thinking…" : "Message Remembr…"}
+          className="min-h-10 max-h-40 flex-1 resize-none bg-transparent py-2.5 text-sm leading-relaxed text-white placeholder:text-[#A1A1A1] focus:outline-none disabled:opacity-60"
         />
 
-        <button
-          type="button"
-          aria-label="AI magic"
-          onClick={onMagic}
-          disabled={disabled}
-          className={cn(
-            "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white",
-            "disabled:pointer-events-none disabled:opacity-40"
-          )}
-        >
-          <Sparkles className="size-4.5" />
-        </button>
+        {disabled ? (
+          <button
+            type="button"
+            aria-label="Stop generating"
+            onClick={onStop}
+            className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <Square className="size-4 fill-current" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label="AI magic"
+            onClick={onMagic}
+            className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#A1A1A1] transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <Sparkles className="size-4.5" />
+          </button>
+        )}
 
         <button
           type="button"
@@ -163,7 +172,6 @@ export function ChatInput({
       <FileUpload
         open={fileModalOpen}
         onClose={() => setFileModalOpen(false)}
-        projectId={projectId}
         onUploaded={handleUploaded}
       />
     </div>

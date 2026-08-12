@@ -32,7 +32,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     features: [
       "Unlimited messages",
       "5 cross-session memories (Beta)",
-      "Memory mode: Goldfish + 5 memories",
+      "Memory mode: Soulmate",
       "Files: Images only",
       "Dashboard: View only",
       "Community support",
@@ -51,7 +51,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     features: [
       "Unlimited messages",
       "Unlimited cross-session memory",
-      "Memory mode: Buddy (remembers 3 sessions)",
+      "Memory mode: Soulmate (unlimited)",
       "Files: Images + PDFs + DOCX",
       "Dashboard: Full access",
       "24hr email support",

@@ -9,7 +9,6 @@ import type {
 export interface FileRow {
   id: string;
   userId: string;
-  projectId: string | null;
   chatId: string | null;
   name: string;
   type: string | null;
@@ -30,7 +29,6 @@ export interface FileRow {
 export interface NewFileRow {
   id: string;
   userId: string;
-  projectId?: string | null;
   chatId?: string | null;
   name: string;
   type: string | null;
@@ -50,7 +48,7 @@ export interface NewFileRow {
 
 /** Column list shared by all read queries (excludes heavy content bytes). */
 const LIST_COLUMNS = `
-  id, user_id, project_id, chat_id, name, type, category, size, status,
+  id, user_id, chat_id, name, type, category, size, status,
   summary, text, facts, keywords, metadata, error, created_at, expires_at
 `;
 
@@ -58,7 +56,6 @@ function rowToPublic(row: Record<string, unknown>): Record<string, unknown> {
   return {
     id: row.id,
     userId: row.user_id,
-    projectId: row.project_id ?? null,
     chatId: row.chat_id ?? null,
     name: row.name,
     type: row.type,
@@ -83,10 +80,10 @@ export async function insertFileDb(row: NewFileRow): Promise<boolean> {
   if (!db) return false;
   try {
     await db`
-      INSERT INTO files (id, user_id, project_id, chat_id, name, type, category, size, status,
+      INSERT INTO files (id, user_id, chat_id, name, type, category, size, status,
         summary, text, facts, keywords, metadata, content, error, created_at, expires_at)
       VALUES (
-        ${row.id}, ${row.userId}, ${row.projectId ?? null}, ${row.chatId ?? null},
+        ${row.id}, ${row.userId}, ${row.chatId ?? null},
         ${row.name}, ${row.type ?? null}, ${row.category}, ${row.size}, ${row.status},
         ${row.summary ?? null}, ${row.text ?? null},
         ${JSON.stringify(row.facts ?? [])}, ${JSON.stringify(row.keywords ?? [])},

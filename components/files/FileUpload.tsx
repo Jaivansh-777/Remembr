@@ -48,7 +48,6 @@ interface QueueItem {
 interface FileUploadProps {
   open: boolean;
   onClose: () => void;
-  projectId?: string | null;
   chatId?: string | null;
   onUploaded?: (files: FileDoc[]) => void;
 }
@@ -56,7 +55,6 @@ interface FileUploadProps {
 export function FileUpload({
   open,
   onClose,
-  projectId,
   chatId,
   onUploaded,
 }: FileUploadProps) {
@@ -147,11 +145,10 @@ export function FileUpload({
         const memoryDoc = uploadResultToFileDoc(
           target,
           user.uid,
-          projectId,
           chatId
         );
 
-        void storeFileMemory(user.uid, memoryDoc, projectId ?? undefined)
+        void storeFileMemory(user.uid, memoryDoc)
           .then((result) => {
             if (result.limitReached) {
               setShowUpgradePrompt(true);
@@ -189,7 +186,7 @@ export function FileUpload({
         }
       }
     },
-    [user, projectId, chatId]
+    [user, chatId]
   );
 
   useEffect(() => {
@@ -418,8 +415,7 @@ function QueueRow({
 
 async function storeFileMemory(
   userId: string,
-  file: FileDoc,
-  projectId?: string
+  file: FileDoc
 ): Promise<AddMemoriesResult> {
   const summary = file.summary?.trim();
   const content = summary
@@ -435,7 +431,6 @@ async function storeFileMemory(
         chatId: file.id,
       },
     ],
-    file.id,
-    { projectId }
+    file.id
   );
 }

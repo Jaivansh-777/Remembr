@@ -58,7 +58,7 @@ async function syncUserProfile(user: User) {
         email: user.email,
         photoURL: user.photoURL || null,
         tier: "free",
-        memoryMode: "buddy",
+        memoryMode: "soulmate",
         messageCount: 0,
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),

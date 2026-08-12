@@ -1,4 +1,4 @@
-export type MemoryMode = "goldfish" | "buddy" | "soulmate";
+export type MemoryMode = "soulmate";
 
 export interface MemoryModeOption {
   id: MemoryMode;
@@ -9,37 +9,23 @@ export interface MemoryModeOption {
 
 export const MEMORY_MODES: MemoryModeOption[] = [
   {
-    id: "goldfish",
-    label: "Goldfish",
-    emoji: "🐠",
-    hint: "Fresh session — no memory",
-  },
-  {
-    id: "buddy",
-    label: "Buddy",
-    emoji: "🤝",
-    hint: "Remembers your last 3 sessions",
-  },
-  {
     id: "soulmate",
     label: "Soulmate",
     emoji: "❤️",
-    hint: "Remembers everything — full context",
+    hint: "Full memory — remembers everything",
   },
 ];
 
 export const MEMORY_MODE_LABEL: Record<MemoryMode, string> = {
-  goldfish: "Goldfish",
-  buddy: "Buddy",
   soulmate: "Soulmate",
 };
 
 export const SUGGESTIONS = [
-  "Remember that I prefer clear, concise answers",
-  "Don't forget my project deadline is next Friday",
-  "Keep in mind I'm learning TypeScript",
   "What do you remember about me?",
-  "Help me debug this code",
+  "Plan my day with me",
+  "Help me write a professional email",
+  "Explain something complex simply",
+  "Give me ideas for my next project",
 ];
 
 export interface Attachment {
@@ -107,7 +93,7 @@ export function getMockReply(input: string, mode: MemoryMode): string {
   }
 
   if (q.includes("last conversation")) {
-    return `Your last conversation ended on a note about planning the Remembr chat experience. Here's the recap:\n\n• We designed the memory mode system (Goldfish / Buddy / Soulmate)\n• You wanted a ChatGPT-style interface with Remembr's purple branding\n\nWant me to continue from there?`;
+    return `Your last conversation ended on a note about planning the Remembr chat experience. Here's the recap:\n\n• We designed the Soulmate memory system\n• You wanted a ChatGPT-style interface with Remembr's black & white branding\n\nWant me to continue from there?`;
   }
 
   if (q.includes("debug")) {

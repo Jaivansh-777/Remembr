@@ -13,7 +13,6 @@ export interface MessageRow {
 export interface ChatRow {
   id: string;
   userId: string;
-  projectId?: string | null;
   title?: string | null;
   createdAt: number;
   updatedAt: number;
@@ -36,9 +35,9 @@ export async function upsertChatDb(chat: ChatRow): Promise<boolean> {
   if (!db) return false;
   try {
     await db`
-      INSERT INTO chats (id, user_id, project_id, title, created_at, updated_at)
+      INSERT INTO chats (id, user_id, title, created_at, updated_at)
       VALUES (
-        ${chat.id}, ${chat.userId}, ${chat.projectId ?? null},
+        ${chat.id}, ${chat.userId},
         ${chat.title ?? null}, ${chat.createdAt}, ${chat.updatedAt}
       )
       ON CONFLICT (id) DO UPDATE SET

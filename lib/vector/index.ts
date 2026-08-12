@@ -6,20 +6,8 @@ import {
   FREE_TRIAL_MEMORIES,
   getUserTier,
 } from "@/lib/trial-protection/server";
-import {
-  FieldValue as AdminFieldValue,
-  Timestamp,
-} from "firebase-admin/firestore";
 
 const EMBED_MODEL = "text-embedding-004";
-
-function adminIncrement() {
-  return AdminFieldValue.increment(1);
-}
-
-function adminTimestamp() {
-  return Timestamp.now();
-}
 
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
@@ -76,7 +64,6 @@ export interface StoredMemoryVector {
   content: string;
   type: string;
   chatId?: string;
-  projectId?: string;
   timestamp: number;
   embedding: number[];
 }
@@ -99,46 +86,27 @@ export class MemoryVectorStore {
 
   /**
    * Stores a memory embedding. Free-tier users are capped at
-   * `FREE_TRIAL_MEMORIES` cross-session (personal) memories; project memories
-   * are not counted. Returns `false` when the store was skipped due to the
-   * free-tier limit.
+   * `FREE_TRIAL_MEMORIES` cross-session (personal) memories. Returns `false`
+   * when the store was skipped due to the free-tier limit.
    */
   async add(memory: Omit<StoredMemoryVector, "embedding">): Promise<boolean> {
     const embedding = await embedText(memory.content);
     const db = getAdminDb();
     if (db) {
-      if (!memory.projectId) {
-        const tier = await getUserTier(db, memory.userId);
-        if (tier === "free") {
-          const count = await countFreeMemories(db, memory.userId);
-          if (count >= FREE_TRIAL_MEMORIES) return false;
-        }
+      const tier = await getUserTier(db, memory.userId);
+      if (tier === "free") {
+        const count = await countFreeMemories(db, memory.userId);
+        if (count >= FREE_TRIAL_MEMORIES) return false;
       }
-      const ref = memory.projectId
-        ? db
-            .collection("projects")
-            .doc(memory.projectId)
-            .collection("memories")
-            .doc(memory.id)
-        : db
-            .collection("memories")
-            .doc(memory.userId)
-            .collection("items")
-            .doc(memory.id);
-      await ref.set({
-        ...memory,
-        shared: Boolean(memory.projectId),
-        embedding,
-      });
-      if (memory.projectId) {
-        await db
-          .collection("projects")
-          .doc(memory.projectId)
-          .update({
-            memoryCount: adminIncrement(),
-            updatedAt: adminTimestamp(),
-          });
-      }
+      await db
+        .collection("memories")
+        .doc(memory.userId)
+        .collection("items")
+        .doc(memory.id)
+        .set({
+          ...memory,
+          embedding,
+        });
       return true;
     } else {
       this.memory.set(memory.id, {
@@ -147,7 +115,6 @@ export class MemoryVectorStore {
         content: memory.content,
         type: memory.type,
         chatId: memory.chatId,
-        projectId: memory.projectId,
         timestamp: memory.timestamp,
         embedding,
       });

@@ -36,7 +36,7 @@ function ProfileContent() {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-[#A1A1A1]">Memory mode</span>
-          <span className="text-white">Buddy</span>
+          <span className="text-white">Soulmate</span>
         </div>
       </div>
       <Button asChild className="bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] hover:opacity-90">

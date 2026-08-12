@@ -1,60 +1,24 @@
 "use client";
 
-import { toast } from "sonner";
+import { Check } from "lucide-react";
 
-import { MEMORY_MODES, type MemoryMode } from "@/lib/chat";
-import { cn } from "@/lib/utils";
+import { MEMORY_MODES } from "@/lib/chat";
 
-interface MemoryToggleProps {
-  value: MemoryMode;
-  onChange: (mode: MemoryMode) => void;
-}
-
-export function MemoryToggle({ value, onChange }: MemoryToggleProps) {
-  const activeIndex = MEMORY_MODES.findIndex((mode) => mode.id === value);
-
-  const handleChange = (mode: MemoryMode) => {
-    if (mode === value) return;
-    onChange(mode);
-    const option = MEMORY_MODES.find((m) => m.id === mode);
-    toast(`${option?.emoji} Switched to ${option?.label} mode`, {
-      description: option?.hint,
-    });
-  };
-
+export function MemoryToggle() {
+  const mode = MEMORY_MODES[0];
   return (
-    <div
-      role="radiogroup"
-      aria-label="Memory mode"
-      className="relative grid grid-cols-3 items-center rounded-full border border-white/10 bg-[#1A1A1A] p-1"
-    >
-      <span
-        aria-hidden
-        className="absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-white shadow-[0_0_16px_rgba(255,255,255,0.25)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        style={{ transform: `translateX(${activeIndex * 100}%)` }}
-      />
-      {MEMORY_MODES.map((mode) => {
-        const active = mode.id === value;
-        return (
-          <button
-            key={mode.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            title={`${mode.label} — ${mode.hint}`}
-            onClick={() => handleChange(mode.id)}
-            className={cn(
-              "relative z-10 flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-200 sm:px-3",
-              active
-                ? "text-[#0A0A0A]"
-                : "text-[#A1A1A1] hover:text-white"
-            )}
-          >
-            <span className="text-sm leading-none">{mode.emoji}</span>
-            <span className="hidden sm:inline">{mode.label}</span>
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-base leading-none">
+        {mode.emoji}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-white">{mode.label} mode</p>
+        <p className="text-xs text-[#A1A1A1]">{mode.hint}</p>
+      </div>
+      <span className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+        <Check className="size-3" />
+        Active
+      </span>
     </div>
   );
 }

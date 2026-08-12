@@ -9,16 +9,10 @@ import { MemoryToggle } from "@/components/chat/MemoryToggle";
 import { RateLimitBadge } from "@/components/chat/RateLimitBadge";
 import { useAuth } from "@/lib/auth-context";
 import { useQuota } from "@/lib/hooks/use-quota";
-import { MEMORY_MODE_LABEL, type MemoryMode } from "@/lib/chat";
-import { setMemoryMode } from "@/lib/firebase/firestore";
 
 function SettingsContent() {
   const { user } = useAuth();
-  const { quota, mode } = useQuota(user?.uid ?? null);
-
-  const handleModeChange = (nextMode: MemoryMode) => {
-    if (user) void setMemoryMode(user.uid, nextMode);
-  };
+  const { quota } = useQuota(user?.uid ?? null);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-10">
@@ -46,16 +40,11 @@ function SettingsContent() {
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-white">Memory mode</h2>
           <p className="text-xs text-[#A1A1A1]">
-            Current mode:{" "}
-            <span className="font-medium text-[#C4B5FD]">
-              {MEMORY_MODE_LABEL[mode]}
-            </span>
+            Remembr always runs in Soulmate mode, so it remembers everything
+            you share.
           </p>
         </div>
-        <MemoryToggle
-          value={mode}
-          onChange={handleModeChange}
-        />
+        <MemoryToggle />
       </section>
 
       <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5">

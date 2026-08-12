@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { RefreshCw } from "lucide-react";
 
 import { MessageBubble, StreamingBubble } from "@/components/chat/MessageBubble";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
@@ -10,6 +11,8 @@ interface MessageListProps {
   messages: ChatMessage[];
   streaming?: string | null;
   thinking?: boolean;
+  onRegenerate?: () => void;
+  canRegenerate?: boolean;
   empty?: React.ReactNode;
 }
 
@@ -17,6 +20,8 @@ export function MessageList({
   messages,
   streaming,
   thinking,
+  onRegenerate,
+  canRegenerate,
   empty,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -52,6 +57,16 @@ export function MessageList({
           ))}
           {streaming ? <StreamingBubble content={streaming} /> : null}
           {thinking && !streaming ? <TypingIndicator /> : null}
+          {canRegenerate && !streaming && !thinking ? (
+            <button
+              type="button"
+              onClick={onRegenerate}
+              className="flex cursor-pointer items-center gap-1.5 self-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-[#A1A1A1] backdrop-blur-xl transition-all hover:border-white/25 hover:bg-white/10 hover:text-white"
+            >
+              <RefreshCw className="size-3.5" />
+              Regenerate response
+            </button>
+          ) : null}
         </div>
       ) : (
         empty

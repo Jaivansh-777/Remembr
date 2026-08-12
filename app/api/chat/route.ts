@@ -29,8 +29,6 @@ interface ChatRequestBody {
   userId: string;
   memoryMode?: string;
   chatId?: string;
-  projectId?: string;
-  projectName?: string;
   userName?: string;
   attachments?: Attachment[];
   memories?: { content: string; type?: string }[];
@@ -145,10 +143,7 @@ export async function POST(request: NextRequest) {
   await learnFromMessage(user.uid, message);
 
   const system = buildSystemPrompt({
-    mode: body.memoryMode ?? "buddy",
     memories: body.memories ?? [],
-    scope: body.projectId ? "team" : "personal",
-    projectName: body.projectName,
     personalization: personalization ?? undefined,
     files: attachments.map((attachment) => ({
       name: attachment.name,
@@ -266,7 +261,6 @@ export async function POST(request: NextRequest) {
           const memoryRows = extracted.map((memory) => ({
             id: createId(),
             userId: user.uid,
-            projectId: body.projectId,
             chatId: body.chatId,
             content: memory.content,
             type: memory.type,
@@ -286,7 +280,6 @@ export async function POST(request: NextRequest) {
                     content: memory.content,
                     type: memory.type,
                     chatId: body.chatId,
-                    projectId: body.projectId,
                     timestamp: Date.now(),
                   })
                 )

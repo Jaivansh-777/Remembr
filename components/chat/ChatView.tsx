@@ -10,9 +10,11 @@ interface ChatViewProps {
   streaming?: string | null;
   thinking?: boolean;
   userId?: string | null;
-  projectId?: string | null;
   onSend: (text: string, attachments: Attachment[]) => void;
+  onStop: () => void;
   onMagic: () => void;
+  onRegenerate: () => void;
+  canRegenerate: boolean;
   onPickSuggestion: (text: string) => void;
 }
 
@@ -21,11 +23,15 @@ export function ChatView({
   streaming,
   thinking,
   userId,
-  projectId,
   onSend,
+  onStop,
   onMagic,
+  onRegenerate,
+  canRegenerate,
   onPickSuggestion,
 }: ChatViewProps) {
+  const busy = Boolean(thinking || streaming);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -33,6 +39,8 @@ export function ChatView({
           messages={messages}
           streaming={streaming}
           thinking={thinking}
+          onRegenerate={onRegenerate}
+          canRegenerate={canRegenerate}
           empty={<EmptyState onPickSuggestion={onPickSuggestion} />}
         />
       </div>
@@ -41,10 +49,10 @@ export function ChatView({
         <div className="mx-auto w-full max-w-3xl">
           <ChatInput
             onSend={onSend}
+            onStop={onStop}
             onMagic={onMagic}
-            disabled={Boolean(thinking || streaming)}
+            disabled={busy}
             userId={userId}
-            projectId={projectId}
           />
         </div>
       </div>

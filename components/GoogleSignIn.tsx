@@ -26,7 +26,7 @@ import type { TrialBlockReason } from "@/lib/trial-protection";
 interface GoogleSignInProps {
   className?: string;
   label?: string;
-  /** Set true on flows that must never block (e.g. project invite joins). */
+  /** Set true on flows that must never block on the free-trial guard. */
   skipTrialCheck?: boolean;
 }
 

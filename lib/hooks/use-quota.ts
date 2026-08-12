@@ -13,23 +13,14 @@ interface UseQuotaResult {
 
 export function useQuota(userId: string | null): UseQuotaResult {
   const [quota, setQuota] = useState<Quota>(() => getQuota(null));
-  const [mode, setMode] = useState<MemoryMode>("buddy");
 
   useEffect(() => {
     if (!userId) return;
     const unsub = watchUser(userId, (data) => {
-      const nextMode = data?.memoryMode as MemoryMode | undefined;
-      if (
-        nextMode === "goldfish" ||
-        nextMode === "buddy" ||
-        nextMode === "soulmate"
-      ) {
-        setMode(nextMode);
-      }
       setQuota(getQuota(data as QuotaUser | null));
     });
     return unsub;
   }, [userId]);
 
-  return { quota, mode };
+  return { quota, mode: "soulmate" };
 }

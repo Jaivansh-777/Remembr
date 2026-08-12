@@ -112,13 +112,11 @@ export function uploadFile({
 export function uploadResultToFileDoc(
   target: UploadTarget,
   userId: string,
-  projectId?: string | null,
   chatId?: string | null
 ): FileDoc {
   return {
     id: target.fileId,
     userId,
-    projectId: projectId ?? null,
     chatId: chatId ?? null,
     name: target.name,
     url: target.url,

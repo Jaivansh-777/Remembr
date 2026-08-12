@@ -103,7 +103,7 @@ export function MemoryDashboard() {
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-white/10 py-10 text-center">
           <BrainCircuit className="size-6 text-[#A1A1A1]" />
           <p className="text-sm text-[#A1A1A1]">
-            No memories yet. Chat with Remembr in Buddy or Soulmate mode to
+            No memories yet. Chat with Remembr in Soulmate mode to
             start building your memory.
           </p>
         </div>

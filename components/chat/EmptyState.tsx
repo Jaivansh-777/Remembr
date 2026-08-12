@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
 
 import { SUGGESTIONS } from "@/lib/chat";
 
@@ -10,7 +10,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
   return (
-    <div className="animate-drop-in flex flex-1 flex-col items-center justify-center gap-6 px-4 py-10 text-center">
+    <div className="animate-drop-in flex flex-1 flex-col items-center justify-center gap-7 px-4 py-10 text-center">
       <div className="relative">
         <div className="absolute inset-0 -z-10 animate-pulse rounded-3xl bg-white/10 blur-3xl" />
         <span className="flex size-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5 shadow-[0_0_40px_rgba(255,255,255,0.15)] backdrop-blur-xl">
@@ -18,13 +18,18 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
         </span>
       </div>
 
-      <div className="flex flex-col items-center gap-1.5">
+      <div className="flex flex-col items-center gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
           Remembr
         </h1>
-        <p className="text-sm text-[#A1A1A1]">
-          Ask it to remember something — it only keeps what you tell it to.
+        <p className="max-w-md text-sm text-[#A1A1A1]">
+          Your memory-first assistant. Ask it anything — it remembers
+          everything you share.
         </p>
+        <span className="mt-1 flex items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/10 px-3 py-1 text-[11px] font-medium text-red-300">
+          <Heart className="size-3 fill-current" />
+          Soulmate mode — remembers everything
+        </span>
       </div>
 
       <button

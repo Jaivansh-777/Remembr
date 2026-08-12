@@ -3,7 +3,6 @@ import { getSql } from "@/lib/db";
 export interface MemoryRow {
   id: string;
   userId: string;
-  projectId?: string | null;
   chatId?: string | null;
   content: string;
   type: string;
@@ -15,7 +14,6 @@ function rowToPublic(row: Record<string, unknown>): Record<string, unknown> {
   return {
     id: row.id,
     userId: row.user_id,
-    projectId: row.project_id ?? null,
     chatId: row.chat_id ?? null,
     content: row.content,
     type: row.type,
@@ -31,9 +29,9 @@ export async function insertMemoriesDb(memories: MemoryRow[]): Promise<number> {
     let inserted = 0;
     for (const memory of memories) {
       const result = await db`
-        INSERT INTO memories (id, user_id, project_id, chat_id, content, type, confidence, created_at)
+        INSERT INTO memories (id, user_id, chat_id, content, type, confidence, created_at)
         VALUES (
-          ${memory.id}, ${memory.userId}, ${memory.projectId ?? null},
+          ${memory.id}, ${memory.userId},
           ${memory.chatId ?? null}, ${memory.content}, ${memory.type},
           ${memory.confidence ?? 1}, ${memory.createdAt}
         ) ON CONFLICT (id) DO NOTHING`;
@@ -51,7 +49,7 @@ export async function recentMemoriesDb(userId: string, limit = 50) {
   if (!db) return [];
   try {
     const rows = await db<Record<string, unknown>[]>`
-      SELECT id, user_id, project_id, chat_id, content, type, confidence, created_at
+      SELECT id, user_id, chat_id, content, type, confidence, created_at
       FROM memories WHERE user_id = ${userId}
       ORDER BY created_at DESC LIMIT ${limit}`;
     return rows.map(rowToPublic);
@@ -72,7 +70,7 @@ export async function searchMemoriesDb(
   try {
     const pattern = `%${query}%`;
     const rows = await db<Record<string, unknown>[]>`
-      SELECT id, user_id, project_id, chat_id, content, type, confidence, created_at
+      SELECT id, user_id, chat_id, content, type, confidence, created_at
       FROM memories
       WHERE user_id = ${userId} AND content ILIKE ${pattern}
       ORDER BY created_at DESC LIMIT ${limit}`;
