@@ -10,7 +10,7 @@ import { Sidebar } from "@/components/chat/Sidebar";
 import { CreateProject } from "@/components/projects/CreateProject";
 import { InviteMembers } from "@/components/projects/InviteMembers";
 import { UpgradePrompt } from "@/components/upgrade/UpgradePrompt";
-import { streamChat } from "@/lib/api";
+import { fetchMemories, streamChat, storeMemoriesApi } from "@/lib/api";
 import type { Attachment, ChatDoc, ChatMessage, MemoryMode } from "@/lib/chat";
 import {
   addMemories,
@@ -189,10 +189,19 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
         let memories: { content: string; type: string }[] = [];
         try {
           const currentProject = projectRef.current;
-          const ctx = currentProject
-            ? await getTeamMemoryContext(user.uid, currentProject.id, text)
-            : await getMemoryContext(user.uid, text);
-          memories = ctx.map((m) => ({ content: m.content, type: m.type }));
+          const token = await user.getIdToken();
+          if (!currentProject) {
+            const ctx = await fetchMemories(token, { query: text, limit: 6 });
+            if (ctx.length === 0) {
+              const legacy = await getMemoryContext(user.uid, text);
+              memories = legacy.map((m) => ({ content: m.content, type: m.type }));
+            } else {
+              memories = ctx.map((m) => ({ content: m.content, type: m.type }));
+            }
+          } else {
+            const ctx = await getTeamMemoryContext(user.uid, currentProject.id, text);
+            memories = ctx.map((m) => ({ content: m.content, type: m.type }));
+          }
         } catch (error) {
           console.error("[chat-layout] memory context failed:", error);
         }
@@ -226,22 +235,36 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
               const mems = evt.data.memories;
               if (Array.isArray(mems) && mems.length > 0 && !stored) {
                 try {
-                  const result = await addMemories(
-                    user.uid,
-                    mems.map((m) => ({
-                      content: m.content,
-                      type: m.type,
-                      confidence: 1,
-                      chatId,
-                    })),
-                    chatId,
+                  const token = await user.getIdToken();
+                  const persisted = await storeMemoriesApi(
+                    token,
                     {
+                      memories: mems.map((m) => ({
+                        content: m.content,
+                        type: m.type,
+                      })),
+                      chatId,
                       projectId: projectRef.current?.id,
-                      userName: user.displayName ?? "Team member",
                     }
                   );
-                  if (result.limitReached) {
-                    setShowUpgradePrompt(true);
+                  if (!persisted) {
+                    const result = await addMemories(
+                      user.uid,
+                      mems.map((m) => ({
+                        content: m.content,
+                        type: m.type,
+                        confidence: 1,
+                        chatId,
+                      })),
+                      chatId,
+                      {
+                        projectId: projectRef.current?.id,
+                        userName: user.displayName ?? "Team member",
+                      }
+                    );
+                    if (result.limitReached) {
+                      setShowUpgradePrompt(true);
+                    }
                   }
                 } catch (error) {
                   console.error("[chat-layout] store memories failed:", error);

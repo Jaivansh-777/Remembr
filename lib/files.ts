@@ -1,29 +1,17 @@
 import {
   collection,
-  deleteDoc,
-  doc,
   getDocs,
   onSnapshot,
   query,
-  setDoc,
-  updateDoc,
   where,
 } from "firebase/firestore";
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
 
-import { createId } from "@/lib/chat";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import {
   FILE_TIERS,
   detectCategory,
   formatBytes,
   getFileTier,
-  sanitizeFileName,
   type FileDoc,
   type FileTierName,
   type ProcessedFilePayload,
@@ -32,118 +20,157 @@ import {
 const filesCol = collection(db, "files");
 
 export interface UploadTarget {
+  fileId: string;
   name: string;
   url: string;
   path: string;
   type: string;
   size: number;
+  category: string;
+  status: string;
+  summary?: string;
+  text?: string;
+  facts?: string[];
+  keywords?: string[];
+  metadata?: Record<string, unknown>;
+  expiresAt?: number;
 }
 
-/** Uploads a file to Firebase Storage under users/{userId}/files/{scope}/{name}_{ts}. */
+/**
+ * Uploads a file straight to the app server, which processes it (extraction +
+ * AI analysis) and stores the bytes + metadata in Postgres. Progress is
+ * reported through an XHR upload listener.
+ */
 export function uploadFile({
-  userId,
   file,
-  projectId,
+  token,
   onProgress,
   signal,
 }: {
-  userId: string;
   file: File;
-  projectId?: string | null;
+  token: string;
   onProgress?: (fraction: number) => void;
   signal?: AbortSignal;
 }): Promise<UploadTarget> {
-  const scope = projectId ?? "personal";
-  const path = `users/${userId}/files/${scope}/${sanitizeFileName(file.name)}_${Date.now()}`;
-  const fileRef = ref(storage, path);
-  const task = uploadBytesResumable(fileRef, file);
-
-  if (signal) {
-    signal.addEventListener("abort", () => task.cancel(), { once: true });
-  }
-
   return new Promise((resolve, reject) => {
-    task.on(
-      "state_changed",
-      (snapshot) => {
-        const fraction = snapshot.totalBytes
-          ? snapshot.bytesTransferred / snapshot.totalBytes
-          : 0;
-        onProgress?.(fraction);
-      },
-      (error) => reject(error),
-      async () => {
-        const url = await getDownloadURL(fileRef);
-        resolve({
-          name: file.name,
-          url,
-          path,
-          type: file.type || "application/octet-stream",
-          size: file.size,
-        });
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/files/upload");
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.responseType = "json";
+
+    if (signal) {
+      signal.addEventListener(
+        "abort",
+        () => xhr.abort(),
+        { once: true }
+      );
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress?.(event.loaded / event.total);
       }
-    );
+    };
+
+    xhr.onload = () => {
+      const data = xhr.response as ProcessedFilePayload | { error?: string };
+      if (xhr.status >= 200 && xhr.status < 300 && data && "name" in data) {
+        resolve({
+          fileId: data.fileId ?? "",
+          name: data.name,
+          url: data.url ?? "",
+          path: "",
+          type: data.type,
+          size: data.size,
+          category: data.category,
+          status: data.status,
+          summary: data.summary,
+          text: data.text,
+          facts: data.facts,
+          keywords: data.keywords,
+          metadata: data.metadata,
+          expiresAt: data.expiresAt,
+        });
+      } else {
+        const message =
+          data && "error" in data && data.error
+            ? data.error
+            : "File processing failed";
+        reject(new Error(message));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Upload failed"));
+    xhr.onabort = () => reject(new Error("Upload cancelled"));
+
+    const form = new FormData();
+    form.append("file", file);
+    xhr.send(form);
   });
 }
 
-export async function processFileOnServer(file: File, token: string): Promise<ProcessedFilePayload> {
-  const form = new FormData();
-  form.append("file", file);
-  const response = await fetch("/api/files/upload", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-  });
-  const data = (await response.json()) as
-    | ProcessedFilePayload
-    | { error?: string };
-  if (!response.ok) {
-    const message =
-      "error" in data && data.error ? data.error : "File processing failed";
-    throw new Error(message);
-  }
-  return data as ProcessedFilePayload;
+/** Backwards-compat: builds a FileDoc from a server upload result. */
+export function uploadResultToFileDoc(
+  target: UploadTarget,
+  userId: string,
+  projectId?: string | null,
+  chatId?: string | null
+): FileDoc {
+  return {
+    id: target.fileId,
+    userId,
+    projectId: projectId ?? null,
+    chatId: chatId ?? null,
+    name: target.name,
+    url: target.url,
+    path: target.path,
+    type: target.type,
+    size: target.size,
+    category: target.category as FileDoc["category"],
+    status: target.status as FileDoc["status"],
+    summary: target.summary,
+    text: target.text,
+    facts: target.facts,
+    keywords: target.keywords,
+    metadata: target.metadata,
+    createdAt: Date.now(),
+    expiresAt: target.expiresAt ?? null,
+  };
 }
 
 export function computeExpiry(now = Date.now()): number {
   return now + FILE_TIERS.free.expiryDays! * 24 * 60 * 60 * 1000;
 }
 
-/** Persists a file record to Firestore `files/{id}`. */
-export async function createFileDoc(
-  userId: string,
-  input: Omit<FileDoc, "id" | "userId" | "createdAt">
-): Promise<string> {
-  const id = createId();
-  await setDoc(doc(filesCol, id), {
-    id,
-    userId,
-    ...input,
-    createdAt: Date.now(),
+/** Fetches a user's files from the Postgres-backed API. */
+export async function fetchFiles(userId: string, token: string): Promise<FileDoc[]> {
+  const response = await fetch("/api/files", {
+    headers: { Authorization: `Bearer ${token}` },
   });
-  return id;
+  if (!response.ok) {
+    throw new Error("Failed to load files");
+  }
+  const data = (await response.json()) as { files?: FileDoc[] };
+  return data.files ?? [];
 }
 
-export async function updateFileDoc(
-  fileId: string,
-  patch: Partial<FileDoc>
-) {
-  await updateDoc(doc(filesCol, fileId), patch);
-}
-
-export async function deleteFileDoc(fileId: string) {
-  await deleteDoc(doc(filesCol, fileId));
-}
-
-export async function deleteFileStorage(path: string) {
-  try {
-    await deleteObject(ref(storage, path));
-  } catch (error) {
-    console.warn("[files] storage delete failed:", error);
+/** Deletes a file via the API (removes Postgres bytes + any legacy record). */
+export async function deleteFileDoc(fileId: string, token?: string) {
+  if (!token) return;
+  const response = await fetch(`/api/files/${encodeURIComponent(fileId)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error("Failed to delete file");
   }
 }
 
-/** Realtime subscription to a user's files (client-side sorted, no composite index). */
+/** No-op for Postgres-stored files (kept for legacy Firebase paths). */
+export async function deleteFileStorage(path: string) {
+  void path;
+}
+
+/** Realtime subscription to a user's legacy Firestore files. */
 export function watchFiles(
   userId: string,
   onUpdate: (files: FileDoc[]) => void

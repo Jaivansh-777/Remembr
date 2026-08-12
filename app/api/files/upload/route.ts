@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireAuth } from "@/lib/api/auth";
+import { insertFileDb } from "@/lib/db/files";
 import { processFileBuffer } from "@/lib/file-processing";
 import {
   FILE_TIERS,
@@ -11,6 +12,7 @@ import {
   type ProcessedFilePayload,
 } from "@/lib/file-types";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { createId } from "@/lib/chat";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,8 +89,11 @@ export async function POST(request: Request) {
     ? Date.now() + tierConfig.expiryDays * 24 * 60 * 60 * 1000
     : null;
 
-  const payload: ProcessedFilePayload = {
-    name: processed.name,
+  const fileId = createId();
+  const stored = await insertFileDb({
+    id: fileId,
+    userId: auth.user.uid,
+    name,
     type: processed.type,
     category: processed.category,
     size: processed.size,
@@ -98,8 +103,33 @@ export async function POST(request: Request) {
     facts: processed.facts,
     keywords: processed.keywords,
     metadata: processed.metadata,
+    content: buffer,
+    createdAt: Date.now(),
+    expiresAt,
+  });
+
+  const payload: ProcessedFilePayload = {
+    fileId: stored ? fileId : undefined,
+    name: processed.name,
+    type: processed.type,
+    category: processed.category,
+    size: processed.size,
+    url: stored ? `/api/files/${fileId}/download` : undefined,
+    status: "ready",
+    summary: processed.summary,
+    text: processed.text.slice(0, 30000),
+    facts: processed.facts,
+    keywords: processed.keywords,
+    metadata: processed.metadata,
     expiresAt: expiresAt ?? undefined,
   };
+
+  if (!stored) {
+    return NextResponse.json(
+      { error: "Storage unavailable. Please try again later." },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(payload);
 }

@@ -16,6 +16,9 @@ import { hasConfiguredProvider, streamWithFallback } from "@/lib/ai/router";
 import { vectorStore } from "@/lib/vector";
 import { getMemoryLimitInfo } from "@/lib/trial-protection/server";
 import { createId, type Attachment } from "@/lib/chat";
+import { getFileDb } from "@/lib/db/files";
+import { insertMemoriesDb } from "@/lib/db/memories";
+import { insertMessageDb } from "@/lib/db/messages";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,32 +84,45 @@ export async function POST(request: NextRequest) {
   // the stored file record so every attachment can be answered from.
   if (attachments.length > 0) {
     const db = getAdminDb();
-    if (db) {
-      await Promise.all(
-        attachments.map(async (attachment) => {
-          if (attachment.text || !attachment.fileId) return;
-          try {
-            const snap = await db
-              .collection("files")
-              .doc(attachment.fileId)
-              .get();
-            if (!snap.exists) return;
-            const data = snap.data() as Record<string, unknown>;
-            if (!attachment.text && typeof data.text === "string" && data.text) {
-              attachment.text = data.text;
-            }
-            if (!attachment.summary && typeof data.summary === "string") {
-              attachment.summary = data.summary;
-            }
-            if (!attachment.category && typeof data.category === "string") {
-              attachment.category = data.category;
-            }
-          } catch (error) {
-            console.warn("[chat] failed to fetch file content:", error);
+    await Promise.all(
+      attachments.map(async (attachment) => {
+        if (attachment.text || !attachment.fileId) return;
+        // New files live in Postgres; legacy files in Firestore.
+        const pgFile = await getFileDb(attachment.fileId, user.uid);
+        if (pgFile) {
+          if (!attachment.text && typeof pgFile.text === "string" && pgFile.text) {
+            attachment.text = pgFile.text;
           }
-        })
-      );
-    }
+          if (!attachment.summary && typeof pgFile.summary === "string") {
+            attachment.summary = pgFile.summary;
+          }
+          if (!attachment.category && typeof pgFile.category === "string") {
+            attachment.category = pgFile.category;
+          }
+          return;
+        }
+        if (!db) return;
+        try {
+          const snap = await db
+            .collection("files")
+            .doc(attachment.fileId)
+            .get();
+          if (!snap.exists) return;
+          const data = snap.data() as Record<string, unknown>;
+          if (!attachment.text && typeof data.text === "string" && data.text) {
+            attachment.text = data.text;
+          }
+          if (!attachment.summary && typeof data.summary === "string") {
+            attachment.summary = data.summary;
+          }
+          if (!attachment.category && typeof data.category === "string") {
+            attachment.category = data.category;
+          }
+        } catch (error) {
+          console.warn("[chat] failed to fetch file content:", error);
+        }
+      })
+    );
   }
 
   const quota = await checkServerQuota(user.uid, "free");
@@ -197,6 +213,30 @@ export async function POST(request: NextRequest) {
 
         await incrementServerQuota(user.uid);
 
+        // Persist the exchange to Postgres (message history + chat row).
+        const now = Date.now();
+        if (body.chatId) {
+          await insertMessageDb({
+            id: createId(),
+            chatId: body.chatId,
+            userId: user.uid,
+            role: "user",
+            content: userMessage,
+            attachments,
+            createdAt: now,
+          });
+          if (fullResponse.trim()) {
+            await insertMessageDb({
+              id: createId(),
+              chatId: body.chatId,
+              userId: user.uid,
+              role: "assistant",
+              content: fullResponse,
+              createdAt: now + 1,
+            });
+          }
+        }
+
         const db = getAdminDb();
         let memoryLimitReached = false;
         if (db) {
@@ -216,25 +256,43 @@ export async function POST(request: NextRequest) {
         }
 
         let stored = false;
-        if (extracted.length > 0 && getAdminDb()) {
-          try {
-            const results = await Promise.all(
-              extracted.map((memory) =>
-                vectorStore.add({
-                  id: createId(),
-                  userId: user.uid,
-                  userName: body.userName,
-                  content: memory.content,
-                  type: memory.type,
-                  chatId: body.chatId,
-                  projectId: body.projectId,
-                  timestamp: Date.now(),
-                })
-              )
-            );
-            stored = results.some(Boolean);
-          } catch (error) {
-            console.error("[chat] vector store write failed:", error);
+        if (extracted.length > 0) {
+          // Postgres copy of the extracted memories (new canonical store).
+          const memoryRows = extracted.map((memory) => ({
+            id: createId(),
+            userId: user.uid,
+            projectId: body.projectId,
+            chatId: body.chatId,
+            content: memory.content,
+            type: memory.type,
+            confidence: 1,
+            createdAt: Date.now(),
+          }));
+          const pgStored = await insertMemoriesDb(memoryRows);
+
+          if (getAdminDb()) {
+            try {
+              const results = await Promise.all(
+                extracted.map((memory) =>
+                  vectorStore.add({
+                    id: createId(),
+                    userId: user.uid,
+                    userName: body.userName,
+                    content: memory.content,
+                    type: memory.type,
+                    chatId: body.chatId,
+                    projectId: body.projectId,
+                    timestamp: Date.now(),
+                  })
+                )
+              );
+              stored = results.some(Boolean) || pgStored > 0;
+            } catch (error) {
+              console.error("[chat] vector store write failed:", error);
+              stored = pgStored > 0;
+            }
+          } else {
+            stored = pgStored > 0;
           }
         }
 

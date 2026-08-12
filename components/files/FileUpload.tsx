@@ -13,10 +13,9 @@ import {
 import { toast } from "sonner";
 
 import {
-  createFileDoc,
   deleteFileStorage,
-  processFileOnServer,
   uploadFile,
+  uploadResultToFileDoc,
 } from "@/lib/files";
 import { useAuth } from "@/lib/auth-context";
 import { useFiles } from "@/lib/hooks/use-files";
@@ -120,12 +119,11 @@ export function FileUpload({
       );
 
       let path: string | undefined;
-      let url: string | undefined;
       try {
+        const token = await user.getIdToken();
         const target = await uploadFile({
-          userId: user.uid,
           file: item.file,
-          projectId,
+          token,
           onProgress: (fraction) => {
             setItems((prev) =>
               prev.map((it) =>
@@ -138,7 +136,6 @@ export function FileUpload({
           signal: controller.signal,
         });
         path = target.path;
-        url = target.url;
 
         setItems((prev) =>
           prev.map((it) =>
@@ -146,48 +143,12 @@ export function FileUpload({
           )
         );
 
-        const token = await user.getIdToken();
-        const payload = await processFileOnServer(item.file, token);
-
-        const fileDoc = await createFileDoc(user.uid, {
-          projectId: projectId ?? null,
-          chatId: chatId ?? null,
-          name: payload.name,
-          url,
-          path,
-          type: payload.type,
-          size: payload.size,
-          category: payload.category,
-          status: payload.status,
-          error: payload.error,
-          summary: payload.summary,
-          text: payload.text,
-          facts: payload.facts,
-          keywords: payload.keywords,
-          metadata: payload.metadata,
-          expiresAt: payload.expiresAt ?? null,
-        });
-
-        const memoryDoc: FileDoc = {
-          id: fileDoc,
-          userId: user.uid,
-          projectId: projectId ?? null,
-          chatId: chatId ?? null,
-          name: payload.name,
-          url,
-          path,
-          type: payload.type,
-          size: payload.size,
-          category: payload.category,
-          status: payload.status,
-          summary: payload.summary,
-          text: payload.text,
-          facts: payload.facts,
-          keywords: payload.keywords,
-          metadata: payload.metadata,
-          createdAt: Date.now(),
-          expiresAt: payload.expiresAt ?? null,
-        };
+        const memoryDoc = uploadResultToFileDoc(
+          target,
+          user.uid,
+          projectId,
+          chatId
+        );
 
         void storeFileMemory(user.uid, memoryDoc, projectId ?? undefined)
           .then((result) => {

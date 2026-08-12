@@ -81,3 +81,52 @@ export async function* streamChat(
     }
   }
 }
+
+export interface MemoryContextItem {
+  id: string;
+  content: string;
+  type: string;
+  createdAt: number;
+}
+
+/** Fetches recent / query-matched memories for chat context. */
+export async function fetchMemories(
+  token: string,
+  opts: { query?: string; limit?: number } = {}
+): Promise<MemoryContextItem[]> {
+  const params = new URLSearchParams();
+  if (opts.query) params.set("query", opts.query);
+  if (opts.limit) params.set("limit", String(opts.limit));
+  const response = await fetch(`/api/memories?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) return [];
+  const json = (await response.json()) as { memories?: MemoryContextItem[] };
+  return json.memories ?? [];
+}
+
+/** Persists client-side memories (e.g. from file attachments) to Postgres. */
+export async function storeMemoriesApi(
+  token: string,
+  opts: {
+    memories: { content: string; type?: string }[];
+    chatId?: string;
+    projectId?: string;
+  }
+): Promise<boolean> {
+  const response = await fetch("/api/memories", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      memories: opts.memories,
+      chatId: opts.chatId,
+      projectId: opts.projectId,
+    }),
+  });
+  if (!response.ok) return false;
+  const json = (await response.json()) as { stored?: number };
+  return (json.stored ?? 0) > 0;
+}

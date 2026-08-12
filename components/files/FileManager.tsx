@@ -86,9 +86,11 @@ export function FileManager() {
 
   const handleDelete = async (file: FileDoc) => {
     if (!window.confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
+    if (!user) return;
     try {
+      const token = await user.getIdToken();
       await Promise.all([
-        deleteFileDoc(file.id),
+        deleteFileDoc(file.id, token),
         file.path ? deleteFileStorage(file.path) : Promise.resolve(),
       ]);
       toast.success("File deleted");
