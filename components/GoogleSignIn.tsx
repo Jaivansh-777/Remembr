@@ -80,6 +80,7 @@ export default function GoogleSignIn({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [blocked, setBlocked] = useState<TrialBlockReason | null>(null);
+  const [guestSetupHelp, setGuestSetupHelp] = useState(false);
 
   /**
    * Runs the free-trial guard after sign-in. Returns `false` (blocking the
@@ -175,6 +176,7 @@ export default function GoogleSignIn({
       return;
     }
     setPending(true);
+    setGuestSetupHelp(false);
     try {
       const result = await signInAnonymously(auth);
       if (result.user) {
@@ -187,7 +189,15 @@ export default function GoogleSignIn({
         }
       }
     } catch (error) {
-      toast.error(getErrorMessage(error));
+      if (
+        error instanceof FirebaseError &&
+        (error.code === "auth/operation-not-allowed" ||
+          error.code === "auth/admin-restricted-operation")
+      ) {
+        setGuestSetupHelp(true);
+      } else {
+        toast.error(getErrorMessage(error));
+      }
     } finally {
       setPending(false);
     }
@@ -246,6 +256,27 @@ export default function GoogleSignIn({
         reason={blocked}
         onClose={() => setBlocked(null)}
       />
+      {guestSetupHelp ? (
+        <div className="mt-4 max-w-md rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left">
+          <p className="text-sm font-medium text-amber-200">
+            Guest mode needs one switch in Firebase
+          </p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white/80">
+            <li>Open <b>Firebase Console</b> for project <code>remembr-sbs</code></li>
+            <li>Go to <b>Authentication → Sign-in method</b></li>
+            <li>Enable <b>Anonymous</b> and click <b>Save</b></li>
+            <li>Refresh this page and try again</li>
+          </ol>
+          <a
+            href="https://console.firebase.google.com/project/remembr-sbs/authentication/providers"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+          >
+            Open Firebase Console
+          </a>
+        </div>
+      ) : null}
     </>
   );
 }
