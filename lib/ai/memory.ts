@@ -197,6 +197,7 @@ export interface MemoryPromptInput {
   scope?: "personal" | "team";
   projectName?: string;
   files?: { name: string; category?: string; summary?: string; size?: number }[];
+  personalization?: string;
 }
 
 /** Builds the system prompt that injects recalled memories. */
@@ -212,6 +213,10 @@ export function buildSystemPrompt(input: MemoryPromptInput): string {
   prompt += `\n\n[CURRENT DATE]\nThe current date and time is: ${now.toISOString()} (Year: ${now.getFullYear()}). Always treat this as "now" when answering questions about dates, times, the current year, or how long ago something happened. Never assume the current year from your training data — it is ${now.getFullYear()}, not any year in your training cutoff.`;
 
   prompt += `\n\n${festivalCalendarBlock()}`;
+
+  if (input.personalization) {
+    prompt += `\n\n${input.personalization}`;
+  }
 
   if (memories.length > 0 && mode !== "goldfish") {
     const header = isTeam

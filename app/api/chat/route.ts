@@ -19,6 +19,7 @@ import { createId, type Attachment } from "@/lib/chat";
 import { getFileDb } from "@/lib/db/files";
 import { insertMemoriesDb } from "@/lib/db/memories";
 import { insertMessageDb } from "@/lib/db/messages";
+import { buildLearningProfileBlock, learnFromMessage } from "@/lib/learn";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -140,11 +141,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const personalization = await buildLearningProfileBlock(user.uid);
+  await learnFromMessage(user.uid, message);
+
   const system = buildSystemPrompt({
     mode: body.memoryMode ?? "buddy",
     memories: body.memories ?? [],
     scope: body.projectId ? "team" : "personal",
     projectName: body.projectName,
+    personalization: personalization ?? undefined,
     files: attachments.map((attachment) => ({
       name: attachment.name,
       category: attachment.category,

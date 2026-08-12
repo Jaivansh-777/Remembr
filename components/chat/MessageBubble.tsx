@@ -1,6 +1,8 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import { toast } from "sonner";
 
 import { FilePreview } from "@/components/files/FilePreview";
 import {
@@ -9,6 +11,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
+import { sendFeedback } from "@/lib/api";
 import type { ChatMessage } from "@/lib/chat";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +48,73 @@ function UserAvatarBubble({ className }: { className?: string }) {
         {(user?.displayName ?? user?.email ?? "U").slice(0, 1).toUpperCase()}
       </AvatarFallback>
     </Avatar>
+  );
+}
+
+function AssistantFeedback({ message }: { message: ChatMessage }) {
+  const { user } = useAuth();
+  const [rating, setRating] = useState<0 | 1 | -1>(0);
+  const [busy, setBusy] = useState(false);
+
+  const rate = async (value: 1 | -1 | 0) => {
+    if (!user || busy) return;
+    setBusy(true);
+    try {
+      const token = await user.getIdToken();
+      const ok = await sendFeedback(token, {
+        messageId: message.id,
+        value,
+      });
+      if (ok) {
+        setRating(value);
+        toast.success(
+          value === 0
+            ? "Feedback cleared"
+            : value === 1
+              ? "Thanks! I'll learn from that."
+              : "Noted. I'll adjust my responses."
+        );
+      } else {
+        toast.error("Couldn't save feedback. Please try again.");
+      }
+    } catch {
+      toast.error("Couldn't save feedback. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const buttonClass = (active: boolean) =>
+    cn(
+      "flex size-6 items-center justify-center rounded-full transition-colors",
+      active
+        ? "bg-white/15 text-white"
+        : "text-[#6B6B6B] hover:bg-white/10 hover:text-white"
+    );
+
+  return (
+    <div className="mt-1 flex items-center gap-1 px-1">
+      <button
+        type="button"
+        aria-label="Good response"
+        title="Good response"
+        disabled={busy}
+        onClick={() => rate(rating === 1 ? 0 : 1)}
+        className={buttonClass(rating === 1)}
+      >
+        <ThumbsUp className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Bad response"
+        title="Bad response"
+        disabled={busy}
+        onClick={() => rate(rating === -1 ? 0 : -1)}
+        className={buttonClass(rating === -1)}
+      >
+        <ThumbsDown className="size-3.5" />
+      </button>
+    </div>
   );
 }
 
@@ -93,6 +163,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {time ? (
             <span className="mt-1 px-1 text-[10px] text-[#6B6B6B]">{time}</span>
           ) : null}
+          <AssistantFeedback message={message} />
         </div>
       </div>
   );

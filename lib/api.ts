@@ -130,3 +130,29 @@ export async function storeMemoriesApi(
   const json = (await response.json()) as { stored?: number };
   return (json.stored ?? 0) > 0;
 }
+
+/** Sends a thumbs up/down (or clears it) for an assistant message. */
+export async function sendFeedback(
+  token: string,
+  opts: {
+    messageId: string;
+    chatId?: string;
+    value: 1 | -1 | 0;
+  }
+): Promise<boolean> {
+  const response = await fetch("/api/feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      messageId: opts.messageId,
+      chatId: opts.chatId,
+      value: opts.value,
+    }),
+  });
+  if (!response.ok) return false;
+  const json = (await response.json()) as { ok?: boolean };
+  return json.ok === true;
+}

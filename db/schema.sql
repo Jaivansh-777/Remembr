@@ -66,3 +66,31 @@ CREATE TABLE IF NOT EXISTS memories (
 
 CREATE INDEX IF NOT EXISTS memories_user_id_idx ON memories (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS memories_project_id_idx ON memories (project_id);
+
+-- Feedback: thumbs up/down on assistant messages (reward/penalty signal for learning).
+CREATE TABLE IF NOT EXISTS message_feedback (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL,
+  chat_id     TEXT,
+  message_id  TEXT NOT NULL,
+  value       INTEGER NOT NULL DEFAULT 0,
+  created_at  BIGINT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS message_feedback_user_message_idx
+  ON message_feedback (user_id, message_id);
+CREATE INDEX IF NOT EXISTS message_feedback_user_id_idx ON message_feedback (user_id, created_at DESC);
+
+-- User learning profiles: adaptive behavioral stats used to personalize prompts.
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id            TEXT PRIMARY KEY,
+  message_count      INTEGER NOT NULL DEFAULT 0,
+  avg_message_chars  REAL NOT NULL DEFAULT 0,
+  hindi_messages     INTEGER NOT NULL DEFAULT 0,
+  emoji_messages     INTEGER NOT NULL DEFAULT 0,
+  up_votes           INTEGER NOT NULL DEFAULT 0,
+  down_votes         INTEGER NOT NULL DEFAULT 0,
+  style_score        REAL NOT NULL DEFAULT 0,
+  learning           JSONB NOT NULL DEFAULT '{}',
+  updated_at         BIGINT NOT NULL
+);
