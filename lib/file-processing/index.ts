@@ -1,17 +1,5 @@
-import { processArchive } from "@/lib/file-processing/archive-processor";
-import { processCode } from "@/lib/file-processing/code-processor";
-import { processDocx } from "@/lib/file-processing/docx-processor";
-import { processImage } from "@/lib/file-processing/image-processor";
-import { processPdf } from "@/lib/file-processing/pdf-processor";
-import { processPptx } from "@/lib/file-processing/ppt-processor";
-import { processSpreadsheet } from "@/lib/file-processing/spreadsheet-processor";
-import { analyzeContent } from "@/lib/file-processing/summarizer";
-import {
-  detectCategory,
-  getExtension,
-  type FileCategory,
-  type ProcessedFile,
-} from "@/lib/file-types";
+import { detectCategory, getExtension, type FileCategory } from "@/lib/file-types";
+import type { ProcessedFile } from "@/lib/file-types";
 
 export const TEXT_PLAIN_TYPES: Record<string, string> = {
   txt: "text/plain",
@@ -89,8 +77,13 @@ export async function processFileBuffer(
   const ext = getExtension(name);
   const category: FileCategory = detectCategory(name, mime);
 
+  // Heavy processors (xlsx, pdf-parse, mammoth…) are loaded lazily so that
+  // routes importing `processFileBuffer` boot fast on serverless and a broken
+  // processor can't take down unrelated uploads.
   switch (category) {
     case "image": {
+      const { processImage } = await import("@/lib/file-processing/image-processor");
+      const { analyzeContent } = await import("@/lib/file-processing/summarizer");
       const image = await processImage(buffer, mime);
       const analysis =
         image.summary && image.summary.trim()
@@ -109,6 +102,8 @@ export async function processFileBuffer(
       };
     }
     case "spreadsheet": {
+      const { processSpreadsheet } = await import("@/lib/file-processing/spreadsheet-processor");
+      const { analyzeContent } = await import("@/lib/file-processing/summarizer");
       const sheet = processSpreadsheet(buffer);
       const analysis = await analyzeContent(sheet.text, name, category);
       return {
@@ -124,6 +119,8 @@ export async function processFileBuffer(
       };
     }
     case "presentation": {
+      const { processPptx } = await import("@/lib/file-processing/ppt-processor");
+      const { analyzeContent } = await import("@/lib/file-processing/summarizer");
       const ppt = await processPptx(buffer, ext);
       const analysis = await analyzeContent(ppt.text, name, category);
       return {
@@ -139,6 +136,8 @@ export async function processFileBuffer(
       };
     }
     case "code": {
+      const { processCode } = await import("@/lib/file-processing/code-processor");
+      const { analyzeContent } = await import("@/lib/file-processing/summarizer");
       const code = processCode(buffer, ext);
       const language = String(code.metadata.language ?? "");
       const analysis = await analyzeContent(code.text, name, category, `Language: ${language}`);
@@ -155,6 +154,8 @@ export async function processFileBuffer(
       };
     }
     case "archive": {
+      const { processArchive } = await import("@/lib/file-processing/archive-processor");
+      const { analyzeContent } = await import("@/lib/file-processing/summarizer");
       const archive = await processArchive(buffer, ext);
       const analysis = await analyzeContent(archive.text, name, category);
       return {
@@ -172,7 +173,9 @@ export async function processFileBuffer(
     }
     case "document":
     default: {
+      const { analyzeContent } = await import("@/lib/file-processing/summarizer");
       if (ext === "pdf") {
+        const { processPdf } = await import("@/lib/file-processing/pdf-processor");
         const doc = await processPdf(buffer);
         const analysis = await analyzeContent(doc.text, name, category);
         return {
@@ -188,6 +191,7 @@ export async function processFileBuffer(
         };
       }
       if (ext === "docx") {
+        const { processDocx } = await import("@/lib/file-processing/docx-processor");
         const doc = await processDocx(buffer);
         const analysis = await analyzeContent(doc.text, name, category);
         return {
