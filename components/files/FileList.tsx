@@ -9,7 +9,7 @@ import {
   type FileCategory,
   type FileDoc,
 } from "@/lib/file-types";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<FileCategory, string> = {
   image: "Image",
@@ -19,20 +19,6 @@ const CATEGORY_LABEL: Record<FileCategory, string> = {
   code: "Code",
   archive: "Archive",
 };
-
-function relativeTime(timestamp: number): string {
-  if (!timestamp) return "";
-  const diff = Date.now() - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days}d ago`;
-  return new Date(timestamp).toLocaleDateString();
-}
 
 interface FileListProps {
   files: FileDoc[];
@@ -96,11 +82,13 @@ export function FileList({ files, onOpen, onDelete }: FileListProps) {
               ) : null}
             </div>
             <p className="mt-0.5 flex items-center gap-2 text-[11px] text-[#A1A1A1]">
-              <span className="rounded-full border border-white/15 bg-white/10 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-white/80">
+              <span className="shrink-0 rounded-full border border-white/15 bg-white/10 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-white/80">
                 {CATEGORY_LABEL[file.category]}
               </span>
-              <span>{formatBytes(file.size)}</span>
-              <span>{relativeTime(file.createdAt)}</span>
+              <span className="shrink-0">{formatBytes(file.size)}</span>
+              <span className="min-w-0 truncate" title={formatDateTime(file.createdAt)}>
+                {formatDateTime(file.createdAt)}
+              </span>
             </p>
             {file.summary ? (
               <p className="mt-1 truncate text-xs text-[#A1A1A1]">{file.summary}</p>

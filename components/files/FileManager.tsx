@@ -22,7 +22,7 @@ import {
   type FileCategory,
   type FileDoc,
 } from "@/lib/file-types";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 
 const FILTERS: { id: FileCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -246,7 +246,9 @@ function FileDetail({
             </h2>
             <p className="mt-0.5 text-xs text-[#A1A1A1]">
               {formatBytes(file.size)} ·{" "}
-              {new Date(file.createdAt).toLocaleDateString()}
+              <span title={formatDateTime(file.createdAt)}>
+                {formatDateTime(file.createdAt)}
+              </span>
             </p>
           </div>
           <button
