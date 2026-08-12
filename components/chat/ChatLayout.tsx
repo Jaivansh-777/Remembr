@@ -162,10 +162,22 @@ export function ChatLayout({ projectId }: ChatLayoutProps) {
       setThinking(true);
       try {
         const chatId = await ensureChat();
-        const history = messagesRef.current.map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
+        const history = messagesRef.current.map((m) => {
+          if (m.role === "user" && m.attachments && m.attachments.length > 0) {
+            const fileBits = m.attachments
+              .filter((a) => typeof a.text === "string" && a.text)
+              .map((a) => `--- ${a.name} ---\n${a.text}`);
+            if (fileBits.length > 0) {
+              return {
+                role: m.role,
+                content: `${m.content}\n\n[ATTACHED FILES]\n${fileBits.join(
+                  "\n\n"
+                )}`,
+              };
+            }
+          }
+          return { role: m.role, content: m.content };
+        });
 
         await addMessage(chatId, {
           role: "user",

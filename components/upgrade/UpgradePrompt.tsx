@@ -30,7 +30,7 @@ export function UpgradePrompt({ open, onClose }: UpgradePromptProps) {
           <Sparkles className="size-5" />
         </div>
         <h2 className="mt-4 text-lg font-semibold tracking-tight text-white">
-          You&apos;ve used all 5 free memories
+          You&apos;ve used all your free memories
         </h2>
         <p className="mt-1.5 text-sm leading-relaxed text-[#A1A1A1]">
           Upgrade to {PLANS.starter.label} (₹{PLANS.starter.priceMonthly}/month)

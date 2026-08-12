@@ -5,17 +5,15 @@ import type {
   StreamProvider,
 } from "@/lib/ai/types";
 
-const BASE_URL = "https://openrouter.ai/api/v1";
+/**
+ * Optional DeepSeek provider (priority 5). Only activates when
+ * `DEEPSEEK_API_KEY` is set. DeepSeek exposes an OpenAI-compatible API.
+ */
+const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
 
-function client(apiKey: string) {
-  return new OpenAI({
-    apiKey,
-    baseURL: BASE_URL,
-    defaultHeaders: {
-      "HTTP-Referer": "https://remembr.sbs",
-      "X-Title": "Remembr",
-    },
-  });
+function deepSeekClient(apiKey: string) {
+  return new OpenAI({ apiKey, baseURL: DEEPSEEK_BASE_URL });
 }
 
 function toMessages(system: string | undefined, messages: StreamOptions["messages"]) {
@@ -28,11 +26,11 @@ function toMessages(system: string | undefined, messages: StreamOptions["message
   ];
 }
 
-export const streamOpenRouter: StreamProvider = async function* (opts: StreamOptions) {
-  const openAi = client(opts.apiKey);
-  const stream = await openAi.chat.completions.create(
+export const streamDeepSeek: StreamProvider = async function* (opts: StreamOptions) {
+  const client = deepSeekClient(opts.apiKey);
+  const stream = await client.chat.completions.create(
     {
-      model: opts.model,
+      model: opts.model ?? DEEPSEEK_MODEL,
       messages: toMessages(opts.system, opts.messages),
       stream: true,
     },
@@ -44,13 +42,13 @@ export const streamOpenRouter: StreamProvider = async function* (opts: StreamOpt
   }
 };
 
-export async function completeOpenRouter(
+export async function completeDeepSeek(
   opts: ChatCompletionOptions
 ): Promise<string> {
-  const openAi = client(opts.apiKey);
-  const completion = await openAi.chat.completions.create(
+  const client = deepSeekClient(opts.apiKey);
+  const completion = await client.chat.completions.create(
     {
-      model: opts.model,
+      model: opts.model ?? DEEPSEEK_MODEL,
       messages: toMessages(opts.system, opts.messages),
       stream: false,
     },

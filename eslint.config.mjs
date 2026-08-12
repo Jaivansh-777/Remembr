@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone sub-projects in the workspace:
+    "korioteck/**",
+    "cyberchat/**",
+    "yt/**",
+    "remembr-browser-extension/**",
+    "remembr-mcp-server/**",
+    "remembr-universal-ai-memory-0.1.0/**",
   ]),
 ]);
 

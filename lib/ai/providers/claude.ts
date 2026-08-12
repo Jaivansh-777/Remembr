@@ -5,16 +5,19 @@ import type {
   StreamProvider,
 } from "@/lib/ai/types";
 
-const BASE_URL = "https://openrouter.ai/api/v1";
+/**
+ * Optional Claude provider (priority 4). Only activates when
+ * `ANTHROPIC_API_KEY` is set. Uses Anthropic's OpenAI-compatible endpoint so
+ * the existing OpenAI SDK + streaming generator can be reused.
+ */
+const CLAUDE_BASE_URL = "https://api.anthropic.com/v1";
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? "claude-3-5-haiku-latest";
 
-function client(apiKey: string) {
+function claudeClient(apiKey: string) {
   return new OpenAI({
     apiKey,
-    baseURL: BASE_URL,
-    defaultHeaders: {
-      "HTTP-Referer": "https://remembr.sbs",
-      "X-Title": "Remembr",
-    },
+    baseURL: CLAUDE_BASE_URL,
+    defaultHeaders: { "x-api-key": apiKey },
   });
 }
 
@@ -28,11 +31,11 @@ function toMessages(system: string | undefined, messages: StreamOptions["message
   ];
 }
 
-export const streamOpenRouter: StreamProvider = async function* (opts: StreamOptions) {
-  const openAi = client(opts.apiKey);
-  const stream = await openAi.chat.completions.create(
+export const streamClaude: StreamProvider = async function* (opts: StreamOptions) {
+  const client = claudeClient(opts.apiKey);
+  const stream = await client.chat.completions.create(
     {
-      model: opts.model,
+      model: opts.model ?? CLAUDE_MODEL,
       messages: toMessages(opts.system, opts.messages),
       stream: true,
     },
@@ -44,13 +47,13 @@ export const streamOpenRouter: StreamProvider = async function* (opts: StreamOpt
   }
 };
 
-export async function completeOpenRouter(
+export async function completeClaude(
   opts: ChatCompletionOptions
 ): Promise<string> {
-  const openAi = client(opts.apiKey);
-  const completion = await openAi.chat.completions.create(
+  const client = claudeClient(opts.apiKey);
+  const completion = await client.chat.completions.create(
     {
-      model: opts.model,
+      model: opts.model ?? CLAUDE_MODEL,
       messages: toMessages(opts.system, opts.messages),
       stream: false,
     },

@@ -10,7 +10,7 @@
 export const MAX_FREE_USERS_PER_IP = 3;
 
 /** Cross-session memories a free-tier account can store before it must upgrade. */
-export const FREE_TRIAL_MEMORIES = 5;
+export const FREE_TRIAL_MEMORIES = 10000;
 
 export type TrialBlockReason = "device_used" | "ip_limit";
 

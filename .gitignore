@@ -41,3 +41,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# standalone workspace sub-projects (not part of the Remembr app)
+/korioteck/
+/cyberchat/
+/yt/
+/remembr-browser-extension/
+/remembr-mcp-server/
+/remembr-universal-ai-memory-0.1.0/
+/remembr-universal-ai-memory-0.1.0.zip
+/.vscode/

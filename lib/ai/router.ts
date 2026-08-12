@@ -1,11 +1,21 @@
+import { streamClaude } from "@/lib/ai/providers/claude";
+import { streamDeepSeek } from "@/lib/ai/providers/deepseek";
 import { streamGemini } from "@/lib/ai/providers/gemini";
 import { streamGroq } from "@/lib/ai/providers/groq";
+import {
+  OPENROUTER_FREE_MODEL,
+  streamOpenRouterFree,
+} from "@/lib/ai/providers/openrouter-free";
 import { streamOpenRouter } from "@/lib/ai/providers/openrouter";
 import type { AiTurn, StreamProvider } from "@/lib/ai/types";
 
 interface ProviderConfig {
   name: string;
+  /** Lower = tried first. */
+  priority: number;
   envKey: string;
+  /** Optional secondary key used when the primary is exhausted/failing. */
+  fallbackEnvKey?: string;
   model: string;
   stream: StreamProvider;
 }
@@ -13,33 +23,47 @@ interface ProviderConfig {
 export const PROVIDERS: ProviderConfig[] = [
   {
     name: "gemini",
+    priority: 1,
     envKey: "GOOGLE_AI_API_KEY",
     model: "gemini-3.1-flash-lite",
     stream: streamGemini,
   },
   {
     name: "groq",
+    priority: 2,
     envKey: "GROQ_API_KEY",
     model: "llama-3.3-70b-versatile",
     stream: streamGroq,
   },
   {
-    name: "openrouter-gemma",
+    name: "openrouter",
+    priority: 3,
     envKey: "OPENROUTER_API_KEY",
-    model: "google/gemma-3-27b-it:free",
+    fallbackEnvKey: "OPENROUTER_API_KEY_FALLBACK",
+    model: "openrouter/auto",
     stream: streamOpenRouter,
   },
   {
-    name: "openrouter-llama",
-    envKey: "OPENROUTER_API_KEY",
-    model: "meta-llama/llama-3.3-70b-instruct:free",
-    stream: streamOpenRouter,
+    name: "claude",
+    priority: 4,
+    envKey: "ANTHROPIC_API_KEY",
+    model: process.env.CLAUDE_MODEL ?? "claude-3-5-haiku-latest",
+    stream: streamClaude,
   },
   {
-    name: "openrouter-auto",
-    envKey: "OPENROUTER_API_KEY",
-    model: "openrouter/free",
-    stream: streamOpenRouter,
+    name: "deepseek",
+    priority: 5,
+    envKey: "DEEPSEEK_API_KEY",
+    model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+    stream: streamDeepSeek,
+  },
+  {
+    name: "openrouter-free",
+    priority: 6,
+    envKey: "OPENROUTER_FREE_API_KEY",
+    fallbackEnvKey: "OPENROUTER_API_KEY",
+    model: OPENROUTER_FREE_MODEL,
+    stream: streamOpenRouterFree,
   },
 ];
 
@@ -95,8 +119,48 @@ export type RouterEvent =
   | { type: "text"; content: string }
   | { type: "error"; message: string };
 
+interface ProviderCandidate {
+  name: string;
+  priority: number;
+  apiKey: string;
+  model: string;
+  stream: StreamProvider;
+}
+
+/** Expands the provider table into concrete candidates ordered by priority.
+ *  When a provider has a fallback key it is appended right after the primary
+ *  candidate (same priority) so it is only used once the primary fails. */
+function getCandidates(): ProviderCandidate[] {
+  const candidates: ProviderCandidate[] = [];
+  for (const provider of PROVIDERS) {
+    const primary = process.env[provider.envKey];
+    if (primary) {
+      candidates.push({
+        name: provider.name,
+        priority: provider.priority,
+        apiKey: primary,
+        model: provider.model,
+        stream: provider.stream,
+      });
+    }
+    const fallback = provider.fallbackEnvKey
+      ? process.env[provider.fallbackEnvKey]
+      : undefined;
+    if (fallback) {
+      candidates.push({
+        name: `${provider.name}-fallback`,
+        priority: provider.priority,
+        apiKey: fallback,
+        model: provider.model,
+        stream: provider.stream,
+      });
+    }
+  }
+  return candidates.sort((a, b) => a.priority - b.priority);
+}
+
 export function hasConfiguredProvider(): boolean {
-  return PROVIDERS.some((provider) => Boolean(process.env[provider.envKey]));
+  return getCandidates().length > 0;
 }
 
 export async function* streamWithFallback(opts: {
@@ -104,8 +168,8 @@ export async function* streamWithFallback(opts: {
   messages: AiTurn[];
   signal?: AbortSignal;
 }): AsyncGenerator<RouterEvent> {
-  const available = PROVIDERS.filter(
-    (provider) => process.env[provider.envKey] && !isOpen(provider.name)
+  const available = getCandidates().filter(
+    (provider) => !isOpen(provider.name)
   );
 
   if (available.length === 0) {
@@ -121,10 +185,9 @@ export async function* streamWithFallback(opts: {
   let started = false;
 
   for (const provider of available) {
-    const apiKey = process.env[provider.envKey]!;
     try {
       const generator = provider.stream({
-        apiKey,
+        apiKey: provider.apiKey,
         model: provider.model,
         system: opts.system,
         messages: opts.messages,
@@ -132,6 +195,11 @@ export async function* streamWithFallback(opts: {
       });
 
       yield { type: "provider", name: provider.name };
+      console.log(
+        `[AI] Used provider: ${provider.name} (priority ${provider.priority})${
+          provider.model === OPENROUTER_FREE_MODEL ? " — openrouter/free router" : ""
+        }`
+      );
 
       for await (const chunk of generator) {
         started = true;

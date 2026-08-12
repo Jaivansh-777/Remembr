@@ -5,6 +5,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getCountFromServer,
   getDoc,
   getDocs,
   increment,
@@ -278,10 +279,8 @@ export async function addMemories(
   const userDoc = await getUserDoc(userId);
   const tier = userDoc ? String(userDoc.tier ?? "free") : "free";
   if (tier === "free") {
-    const snapshot = await getDocs(
-      query(memoriesCol(userId), limit(FREE_TRIAL_MEMORIES + 1))
-    );
-    const count = snapshot.size;
+    const countSnap = await getCountFromServer(query(memoriesCol(userId)));
+    const count = countSnap.data().count;
     if (count >= FREE_TRIAL_MEMORIES) {
       limitReached = true;
       toStore = [];

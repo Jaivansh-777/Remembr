@@ -5,8 +5,9 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { FREE_TRIAL_MEMORIES } from "@/lib/trial-protection";
 
-const FREE_MEMORY_LIMIT = 5;
+const FREE_MEMORY_LIMIT = FREE_TRIAL_MEMORIES;
 
 interface MemoryCounterProps {
   /** User's current tier from the Firestore `users/{uid}` doc. */
@@ -23,9 +24,12 @@ export function MemoryCounter({ tier, count }: MemoryCounterProps) {
       return;
     }
     notifiedRef.current = true;
-    toast("You've used all 5 cross-session memories. Upgrade to Starter for unlimited memory.", {
-      duration: 6000,
-    });
+    toast(
+      `You've used all ${FREE_MEMORY_LIMIT} cross-session memories. Upgrade to Starter for unlimited memory.`,
+      {
+        duration: 6000,
+      }
+    );
   }, [tier, count]);
 
   if (tier !== "free") return null;
@@ -83,10 +87,10 @@ export function MemoryCounter({ tier, count }: MemoryCounterProps) {
 
       <p className="text-xs text-[#A1A1A1]">
         {isFull
-          ? "You've used all 5 memories! Upgrade to continue."
+          ? `You've used all ${FREE_MEMORY_LIMIT} memories! Upgrade to continue.`
           : isWarning
             ? "Almost out! Upgrade for unlimited."
-            : "Free plan includes 5 cross-session memories (Beta)."}
+            : `Free plan includes ${FREE_MEMORY_LIMIT} cross-session memories (Beta).`}
       </p>
     </div>
   );

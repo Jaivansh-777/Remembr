@@ -3,6 +3,15 @@ export interface AiTurn {
   content: string;
 }
 
+/** Providers in the fallback chain, ordered by priority. */
+export type ProviderName =
+  | "gemini"
+  | "groq"
+  | "openrouter"
+  | "claude"
+  | "deepseek"
+  | "openrouter-free";
+
 export interface StreamOptions {
   apiKey: string;
   model: string;

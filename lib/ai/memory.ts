@@ -27,22 +27,11 @@ const RECALL_PATTERNS = [
   /\bwhat.*(?:remember|forgot)\b/i,
 ];
 
-/** Phrases that explicitly ask Remembr to *store* a memory. */
-const STORE_PATTERNS = [
-  /\bremember\b/i,
-  /\b(?:don'?t|do not|never) (?:forget|lose)\b/i,
-  /\bkeep (?:this|that )?in mind\b/i,
-  /\bnote (?:this|that|it )?down\b/i,
-  /\bsave (?:this|that|it)\b/i,
-  /\bwrite (?:this|that|it) down\b/i,
-  /\btake (?:a )?note\b/i,
-  /\bstore this\b/i,
-  /\bmark (?:this|that) down\b/i,
-];
-
 /**
- * Detects whether a user message explicitly asks Remembr to remember
- * something. Memories are only ever stored when this returns true.
+ * Decides whether to try extracting memories from an exchange.
+ * Memories are auto-extracted from every exchange EXCEPT pure recall /
+ * acknowledgement messages — this is what lets Remembr remember things like
+ * "my dog is Buzo" even without the user explicitly saying "remember".
  */
 export function shouldStoreMemories(message: string): boolean {
   const text = message.trim();
@@ -50,11 +39,12 @@ export function shouldStoreMemories(message: string): boolean {
   for (const pattern of RECALL_PATTERNS) {
     if (pattern.test(text)) return false;
   }
-  return STORE_PATTERNS.some((pattern) => pattern.test(text));
+  return true;
 }
 
 const EXTRACTION_PROMPT = `Extract 1-3 key memories from this exchange that will be useful for future conversations.
-Focus on: facts the user shared, preferences, decisions made, or ongoing projects.
+Capture facts the user shares about themselves (names, pets, family, job, likes, dislikes), preferences, decisions made, and ongoing projects.
+Include small personal details even if they seem minor — they matter for future recall.
 Return ONLY a JSON array, no other text, in this exact shape:
 [{"type":"fact|preference|decision|project_update|tone|project|attachment","content":"..."}]`;
 
@@ -151,6 +141,33 @@ export async function extractMemories(
         completeOpenRouter({
           apiKey: openRouterKey,
           model: "google/gemma-3-27b-it:free",
+          system: EXTRACTION_PROMPT,
+          messages: [{ role: "user", content: exchange }],
+        }),
+    });
+  }
+  const openRouterFallbackKey = process.env.OPENROUTER_API_KEY_FALLBACK;
+  if (openRouterFallbackKey) {
+    candidates.push({
+      key: "openrouter-fallback",
+      fn: () =>
+        completeOpenRouter({
+          apiKey: openRouterFallbackKey,
+          model: "google/gemma-3-27b-it:free",
+          system: EXTRACTION_PROMPT,
+          messages: [{ role: "user", content: exchange }],
+        }),
+    });
+  }
+  const openRouterFreeKey =
+    process.env.OPENROUTER_FREE_API_KEY ?? process.env.OPENROUTER_API_KEY;
+  if (openRouterFreeKey) {
+    candidates.push({
+      key: "openrouter-free",
+      fn: () =>
+        completeOpenRouter({
+          apiKey: openRouterFreeKey,
+          model: "openrouter/free",
           system: EXTRACTION_PROMPT,
           messages: [{ role: "user", content: exchange }],
         }),

@@ -1,4 +1,4 @@
-export const FREE_DAILY_LIMIT = 50;
+export const FREE_DAILY_LIMIT = Infinity;
 export const PRO_DAILY_LIMIT = Infinity;
 
 export interface Quota {

@@ -67,9 +67,46 @@ export async function POST(request: NextRequest) {
     return jsonResponse({ error: "Forbidden" }, 403);
   }
 
+  const attachments = (body.attachments ?? []).filter(
+    (attachment): attachment is Attachment =>
+      Boolean(attachment) && typeof attachment.name === "string"
+  );
+
   const message = body.message?.trim() ?? "";
-  if (!message) {
+  if (!message && attachments.length === 0) {
     return jsonResponse({ error: "Message is required" }, 400);
+  }
+
+  // Some clients send a fileId without extracted text. Pull the content from
+  // the stored file record so every attachment can be answered from.
+  if (attachments.length > 0) {
+    const db = getAdminDb();
+    if (db) {
+      await Promise.all(
+        attachments.map(async (attachment) => {
+          if (attachment.text || !attachment.fileId) return;
+          try {
+            const snap = await db
+              .collection("files")
+              .doc(attachment.fileId)
+              .get();
+            if (!snap.exists) return;
+            const data = snap.data() as Record<string, unknown>;
+            if (!attachment.text && typeof data.text === "string" && data.text) {
+              attachment.text = data.text;
+            }
+            if (!attachment.summary && typeof data.summary === "string") {
+              attachment.summary = data.summary;
+            }
+            if (!attachment.category && typeof data.category === "string") {
+              attachment.category = data.category;
+            }
+          } catch (error) {
+            console.warn("[chat] failed to fetch file content:", error);
+          }
+        })
+      );
+    }
   }
 
   const quota = await checkServerQuota(user.uid, "free");
@@ -86,11 +123,6 @@ export async function POST(request: NextRequest) {
       500
     );
   }
-
-  const attachments = (body.attachments ?? []).filter(
-    (attachment): attachment is Attachment =>
-      Boolean(attachment) && typeof attachment.name === "string"
-  );
 
   const system = buildSystemPrompt({
     mode: body.memoryMode ?? "buddy",
@@ -116,12 +148,17 @@ export async function POST(request: NextRequest) {
       (attachment) =>
         `--- ${attachment.name} ---\n${String(attachment.text).slice(0, 4000)}`
     );
+  const baseMessage =
+    message ||
+    (attachments.length > 0
+      ? "Please analyze the attached file(s)."
+      : "");
   const userMessage =
     fileContent.length > 0
-      ? `${message}\n\n[ATTACHED FILE CONTENTS]\n${fileContent
+      ? `${baseMessage}\n\n[ATTACHED FILE CONTENTS]\n${fileContent
           .join("\n\n")
           .slice(0, 16000)}`
-      : message;
+      : baseMessage;
 
   const messages = [
     ...history,

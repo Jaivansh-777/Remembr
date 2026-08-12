@@ -159,6 +159,33 @@ export async function analyzeContent(
         }),
     });
   }
+  const openRouterFallbackKey = process.env.OPENROUTER_API_KEY_FALLBACK;
+  if (openRouterFallbackKey) {
+    candidates.push({
+      key: "openrouter-fallback",
+      fn: () =>
+        completeOpenRouter({
+          apiKey: openRouterFallbackKey,
+          model: "google/gemma-3-27b-it:free",
+          system: ANALYSIS_PROMPT,
+          messages: [{ role: "user", content: body }],
+        }),
+    });
+  }
+  const openRouterFreeKey =
+    process.env.OPENROUTER_FREE_API_KEY ?? process.env.OPENROUTER_API_KEY;
+  if (openRouterFreeKey) {
+    candidates.push({
+      key: "openrouter-free",
+      fn: () =>
+        completeOpenRouter({
+          apiKey: openRouterFreeKey,
+          model: "openrouter/free",
+          system: ANALYSIS_PROMPT,
+          messages: [{ role: "user", content: body }],
+        }),
+    });
+  }
 
   for (const candidate of candidates) {
     try {

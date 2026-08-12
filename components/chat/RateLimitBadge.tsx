@@ -6,14 +6,19 @@ import { cn } from "@/lib/utils";
 import type { Quota } from "@/lib/rate-limit";
 
 export function RateLimitBadge({ quota }: { quota: Quota }) {
+  const unlimited = quota.limit === Infinity;
   const remaining = quota.limit - quota.used;
   const pct = quota.limit > 0 ? quota.used / quota.limit : 0;
-  const exhausted = remaining <= 0;
-  const low = !exhausted && pct >= 0.8;
+  const exhausted = !unlimited && remaining <= 0;
+  const low = !exhausted && !unlimited && pct >= 0.8;
 
   return (
     <span
-      title={`${quota.used} of ${quota.limit} messages used today (resets daily)`}
+      title={
+        unlimited
+          ? `${quota.used} messages sent today — unlimited`
+          : `${quota.used} of ${quota.limit} messages used today (resets daily)`
+      }
       className={cn(
         "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums backdrop-blur-xl",
         exhausted &&
@@ -28,7 +33,7 @@ export function RateLimitBadge({ quota }: { quota: Quota }) {
     >
       <Gauge className="size-3" />
       <span className="hidden sm:inline">Messages</span>
-      {quota.used}/{quota.limit}
+      {unlimited ? `${quota.used} sent` : `${quota.used}/${quota.limit}`}
       {exhausted ? " — limit reached" : ""}
     </span>
   );

@@ -61,7 +61,7 @@ export async function getUserTier(
   }
 }
 
-/** Counts stored personal memories, capped at limit + 1 (cheap abuse check). */
+/** Counts stored personal memories (cheap aggregate query, no doc download). */
 export async function countFreeMemories(
   db: NonNullable<ReturnType<typeof getAdminDb>>,
   uid: string
@@ -71,9 +71,9 @@ export async function countFreeMemories(
       .collection("memories")
       .doc(uid)
       .collection("items")
-      .limit(FREE_TRIAL_MEMORIES + 1)
+      .count()
       .get();
-    return snap.size;
+    return snap.data().count;
   } catch (error) {
     console.error("[trial-protection] countFreeMemories failed:", error);
     return 0;
